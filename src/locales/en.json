@@ -74,7 +74,21 @@
       "actions": "Actions",
       "empty": "No archived documents yet.",
       "actionsFor": "Actions for {name}",
-      "emailSend": "Send by email"
+      "emailSend": "Send by email",
+      "viewCertificate": "View certificate"
+    },
+    "certificate": {
+      "title": "Certificate for {name}",
+      "disclaimer": "This is a document certificate — the original file content isn't stored in this demo environment.",
+      "uploadDate": "Uploaded",
+      "archiveDate": "Archived",
+      "docId": "Document ID",
+      "hashAlgorithm": "Hash algorithm",
+      "standard": "Standard",
+      "fileType": "File type",
+      "fileSize": "File size",
+      "documentInfoSection": "Document information",
+      "verificationSection": "Verification information"
     },
     "deleteDialog": {
       "title": "Delete document",
@@ -109,7 +123,12 @@
         "error": "Error"
       },
       "failedSuffix": "· failed",
-      "addMore": "Add another document"
+      "addMore": "Add another document",
+      "previewFile": "Preview {name}"
+    },
+    "preview": {
+      "title": "Preview of {name}",
+      "unsupported": "No preview available for this file type — you can download it after timestamping."
     },
     "panel": {
       "title": "Operation panel",
@@ -162,16 +181,12 @@
       "description": "Enter the 6-digit verification code sent to {phone}.",
       "digitLabel": "Digit {n}",
       "wrongCode": "Incorrect code, please try again.",
+      "expiredError": "This code has expired — request a new one.",
       "remainingTime": "Time left {time}",
+      "expiredLabel": "Code expired",
       "resend": "Resend code",
       "verify": "Verify",
       "verifying": "Verifying…"
-    },
-    "otpExpired": {
-      "badge": "Expired",
-      "title": "Code expired",
-      "description": "Verification codes are valid for a limited time for security reasons. Let's send you a new one.",
-      "resend": "Resend"
     },
     "result": {
       "title": "Result",

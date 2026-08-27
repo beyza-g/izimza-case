@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { Download, Mail, MoreVertical, Trash2, UploadCloud } from 'lucide-vue-next'
+import { Download, Eye, Mail, MoreVertical, Trash2, UploadCloud } from 'lucide-vue-next'
 import { useQueryClient } from '@tanstack/vue-query'
 import StatCard from '@/components/ui/StatCard.vue'
 import StatusBadge from '@/components/ui/StatusBadge.vue'
@@ -33,6 +33,7 @@ import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
 import { useDropzone, hasAcceptedExtension } from '@/composables/useDropzone'
 import { pendingUploadFiles } from '@/composables/usePendingUpload'
+import DocumentCertificatePanel from '@/components/dashboard/DocumentCertificatePanel.vue'
 
 // Single source of truth for the Recently Archived Documents table's column
 // widths — header, loading skeleton, and data rows all bind to this so they
@@ -127,7 +128,8 @@ const { dragActive, onDragEnter, onDragLeave, onDrop } = useDropzone(acceptFiles
 function downloadDocument(doc: Document) {
   // A real, observable file — this mock backend never stored the original
   // bytes, so what's downloadable is a receipt of the archived state, not a
-  // copy of the original document.
+  // copy of the original document. Mirrors exactly what DocumentCertificatePanel
+  // displays, so the panel's "Download" button and this never drift apart.
   const content = [
     'İzİmza — Archive Record',
     '',
@@ -135,10 +137,23 @@ function downloadDocument(doc: Document) {
     `Boyut: ${doc.sizeMb} MB`,
     `Tarih: ${doc.date}`,
     `Durum: ${doc.status}`,
+    `Belge No: #${doc.id}`,
+    'Özet algoritması: SHA-256',
+    'Standart: RFC 3161',
     '',
   ].join('\n')
   downloadTextFile(`${doc.name}.arsiv.txt`, content)
   pushToast(t('dashboard.toasts.downloaded', { name: doc.name }), { tone: 'success' })
+}
+
+const certificateDoc = ref<Document | null>(null)
+
+function openCertificate(doc: Document) {
+  certificateDoc.value = doc
+}
+
+function closeCertificate() {
+  certificateDoc.value = null
 }
 
 async function emailDocument(doc: Document) {
@@ -368,13 +383,22 @@ function confirmDelete() {
             <span class="hidden md:inline text-[13px] text-muted-foreground">{{ doc.date }}</span>
             <StatusBadge :status="doc.status" />
 
-            <div class="flex items-center justify-end gap-3">
+            <div class="flex items-center justify-end gap-1">
               <button
                 type="button"
-                class="hidden md:inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
+                class="hidden md:inline-flex w-8 h-8 flex-none items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                :aria-label="t('dashboard.table.viewCertificate')"
+                @click="openCertificate(doc)"
+              >
+                <Eye class="w-4 h-4" />
+              </button>
+
+              <button
+                type="button"
+                class="hidden md:inline-flex w-8 h-8 flex-none items-center justify-center rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
                 @click="downloadDocument(doc)"
               >
-                <Download class="w-4 h-4" /> {{ t('common.actions.download') }}
+                <Download class="w-4 h-4" />
               </button>
 
               <DropdownMenu>
@@ -388,6 +412,9 @@ function confirmDelete() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <DropdownMenuItem class="md:hidden" @click="openCertificate(doc)">
+                    <Eye class="w-4 h-4" /> {{ t('dashboard.table.viewCertificate') }}
+                  </DropdownMenuItem>
                   <DropdownMenuItem class="md:hidden" @click="downloadDocument(doc)">
                     <Download class="w-4 h-4" /> {{ t('common.actions.download') }}
                   </DropdownMenuItem>
@@ -426,5 +453,11 @@ function confirmDelete() {
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+
+    <DocumentCertificatePanel
+      :document="certificateDoc"
+      @dismiss="closeCertificate"
+      @download="certificateDoc && downloadDocument(certificateDoc)"
+    />
   </div>
 </template>

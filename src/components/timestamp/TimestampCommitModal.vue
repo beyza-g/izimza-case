@@ -12,9 +12,10 @@ const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps<{
   open: boolean
-  step: 'otp' | 'otp-expired' | 'result' | 'send' | 'sent'
+  step: 'otp' | 'result' | 'send' | 'sent'
   otpError: string
   otpComplete: boolean
+  isOtpExpired: boolean
   submitting: boolean
   countdown: number
   countdownLabel: string
@@ -65,7 +66,6 @@ const isSheet = useMediaQuery('(max-width: 767px)')
 const dialogTitle = computed(() => {
   switch (props.step) {
     case 'otp':
-    case 'otp-expired':
       return t('timestamp.otp.title')
     case 'result':
     case 'sent':
@@ -110,6 +110,7 @@ function onDialogOpenChange(value: boolean) {
           :step="step"
           :otp-error="otpError"
           :otp-complete="otpComplete"
+          :is-otp-expired="isOtpExpired"
           :submitting="submitting"
           :countdown="countdown"
           :countdown-label="countdownLabel"
@@ -161,6 +162,7 @@ function onDialogOpenChange(value: boolean) {
         :step="step"
         :otp-error="otpError"
         :otp-complete="otpComplete"
+        :is-otp-expired="isOtpExpired"
         :submitting="submitting"
         :countdown="countdown"
         :countdown-label="countdownLabel"

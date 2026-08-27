@@ -74,7 +74,21 @@
       "actions": "İşlem",
       "empty": "Henüz arşivlenmiş belge yok.",
       "actionsFor": "{name} için işlemler",
-      "emailSend": "E-posta ile gönder"
+      "emailSend": "E-posta ile gönder",
+      "viewCertificate": "Belge sertifikasını görüntüle"
+    },
+    "certificate": {
+      "title": "{name} sertifikası",
+      "disclaimer": "Bu bir belge sertifikasıdır, orijinal dosya içeriği bu demo ortamında saklanmaz.",
+      "uploadDate": "Yüklenme tarihi",
+      "archiveDate": "Arşivlenme tarihi",
+      "docId": "Belge No",
+      "hashAlgorithm": "Özet algoritması",
+      "standard": "Standart",
+      "fileType": "Dosya türü",
+      "fileSize": "Dosya boyutu",
+      "documentInfoSection": "Belge Bilgileri",
+      "verificationSection": "Doğrulama Bilgileri"
     },
     "deleteDialog": {
       "title": "Belgeyi sil",
@@ -109,7 +123,12 @@
         "error": "Hata"
       },
       "failedSuffix": "· damgalanamadı",
-      "addMore": "Yeni belge ekle"
+      "addMore": "Yeni belge ekle",
+      "previewFile": "{name} için önizleme"
+    },
+    "preview": {
+      "title": "{name} önizlemesi",
+      "unsupported": "Bu dosya türü için önizleme mevcut değil, damgalama sonrası indirerek görüntüleyebilirsiniz."
     },
     "panel": {
       "title": "İşlem paneli",
@@ -162,16 +181,12 @@
       "description": "{phone} numarasına gönderilen 6 haneli doğrulama kodunu gir.",
       "digitLabel": "{n}. hane",
       "wrongCode": "Kod hatalı, tekrar deneyin.",
+      "expiredError": "Bu kodun süresi doldu, yeni bir kod iste.",
       "remainingTime": "Kalan süre {time}",
+      "expiredLabel": "Kodun süresi doldu",
       "resend": "Tekrar gönder",
       "verify": "Doğrula",
       "verifying": "Doğrulanıyor…"
-    },
-    "otpExpired": {
-      "badge": "Süresi doldu",
-      "title": "Kodun süresi doldu",
-      "description": "Güvenlik nedeniyle doğrulama kodları sınırlı süre geçerlidir. Yeni bir kod gönderelim.",
-      "resend": "Yeniden gönder"
     },
     "result": {
       "title": "Sonuç",
