@@ -196,11 +196,6 @@ function onPhoneInput(event: Event) {
         <div>
           <div class="flex items-center gap-2.5 mb-1">
             <p class="text-xl font-semibold tracking-tight m-0">{{ fullName }}</p>
-            <!--
-              NOT (README'ye eklenecek): "NES doğrulandı" rozeti mevcut/gerçek uygulamada yoktu;
-              tasarım aşamasında Türk e-imza pazarına özgü bir güven sinyali göstermek için
-              bilinçli olarak eklenmiş bir farklılaştırma kararıdır — rastgele bir etiket değildir.
-            -->
             <span
               class="relative group inline-flex items-center gap-1.5 bg-success/12 text-success rounded-full px-2.5 py-1 text-xs font-semibold cursor-help"
             >
@@ -281,7 +276,7 @@ function onPhoneInput(event: Event) {
             </button>
           </div>
           <p
-            class="w-full text-[11.5px] leading-relaxed text-muted-foreground text-right max-w-[52ch] m-0"
+            class="w-full text-[11.5px] leading-relaxed text-muted-foreground text-right max-w-[65ch] m-0"
           >
             {{ t('profile.kvkkText') }}
             <a href="#" class="whitespace-nowrap text-primary hover:underline">{{
