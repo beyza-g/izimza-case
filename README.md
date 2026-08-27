@@ -126,6 +126,8 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 | 26  | The real app splits its API across a separate subdomain per feature with inconsistent casing (e.g. `profileapi.izimza.com/api/Dashboard/...`) — no single, predictable resource surface                                                                         | One base URL (`json-server` on `:3001`), flat and consistently-cased resource naming (`/documents`, `/account`, `/profile`, …)                                                                                                                                         |
 | 27  | Content pops in abruptly after the page finishes loading, shifting the layout underneath it (no placeholder holds the eventual space)                                                                                                                           | `SkeletonBlock.vue` — a shimmer-animated block sized to match its eventual content, used wherever data is still loading (e.g. `StatCard.vue`, the dashboard's stat row)                                                                                                |
 | 28  | Dashboard's "Sign now" card promised drag-and-drop copy with zero event handlers wired, and has no processing pipeline of its own since Sign isn't implemented — a valid drop there was a dead end                                                              | Real drag/drop handling shared with Timestamp's own dropzone (`useDropzone.ts`, one file-acceptance path, not two); a dropped/selected file is routed to the working Timestamp queue instead of discarded — see below                                                  |
+| 29  | No way to check a queued file is the right one before spending a credit on it                                                                                                                                                                                    | `FilePreviewSheet.vue` — a right-side sheet (per-row preview button) renders the file's own `File` object (`URL.createObjectURL`) natively for PDF/PNG, with a thumbnail strip to page between every queued file and a plain fallback for unsupported types; preview-only, and only for the pre-commit queue (see note below) |
+| 30  | A literal file preview for Dashboard/Archive's historical documents would show fake content — the mock backend never stored real bytes for them in the first place                                                                                              | `DocumentCertificatePanel.vue` — a genuine-metadata certificate (name, type, size, date, status badge, hash algorithm/standard labels) with a real downloadable text receipt, plus an always-visible in-UI notice that this isn't the original file                            |
 
 The rest of this section covers the most consequential of these in more depth.
 
@@ -262,13 +264,30 @@ The rest of this section covers the most consequential of these in more depth.
   in to a different processing flow — it produces a meaningful result
   instead of an empty "drop."
 
-- **shadcn-vue installed later, for the row-actions menu, not from day one**: CLAUDE.md
-  named "Tailwind + Shadcn Vue" as the intended stack and `src/assets/main.css`'s
+- **Timestamp's queue gets a real content preview; Dashboard/Archive's
+  historical documents get a certificate, not a fake preview**: the
+  queue's `File` objects are real and still sit in the browser's own
+  memory, so `FilePreviewSheet.vue` renders actual PDF/PNG content
+  client-side because the mock backend never stores document bytes at
+  all (`mock-data/db.json` is metadata-only). The Timestamp queue offers
+  a full preview (PDF/image rendering, quick actions, keyboard
+  navigation) since real file content is available; Dashboard/Archive's
+  historical documents instead get a `DocumentCertificatePanel.vue`
+  generated from genuine metadata — since there is no real backing file
+  left to render there, showing one would be showing content that isn't
+  actually the document. The panel carries its own always-visible notice
+  ("this is a document certificate — the original file content isn't
+  stored in this demo environment") directly in the UI rather than only
+  in this README, so a viewer understands the limitation without having
+  to go looking for it.
+
+- **shadcn-vue installed later, for the row-actions menu, not from day one**: the
+  project's stated stack was "Tailwind + Shadcn Vue," and `src/assets/main.css`'s
   design tokens were already authored in shadcn's own semantic naming convention
   (`background`/`card`/`primary`/`border`/`ring`, etc.), but the original
   implementation plan for this project never included a `shadcn-vue init` step —
   it went straight to hand-authoring `src/components/ui/*.vue` files styled
-  directly off the Claude Design canvas's literal values. That reads as a gap
+  directly off the source design's literal values. That reads as a gap
   between the stated stack and what was actually planned, not a documented
   decision to avoid the library. `shadcn-vue` was installed now, scoped to the
   dropdown-menu/alert-dialog components the archived-documents action menu
