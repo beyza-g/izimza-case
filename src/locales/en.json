@@ -42,7 +42,8 @@
     "toggleAppearance": "Toggle appearance",
     "profileSettings": "Profile & Settings",
     "logout": "Log out",
-    "requiredField": "This field is required"
+    "requiredField": "This field is required",
+    "loggingIn": "Logging in..."
   },
   "dashboard": {
     "greeting": "Hello, {name}",

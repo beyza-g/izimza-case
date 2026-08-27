@@ -42,7 +42,8 @@
     "toggleAppearance": "Görünümü değiştir",
     "profileSettings": "Profil & Ayarlar",
     "logout": "Çıkış yap",
-    "requiredField": "Bu alan zorunludur"
+    "requiredField": "Bu alan zorunludur",
+    "loggingIn": "Giriş yapılıyor"
   },
   "dashboard": {
     "greeting": "Merhaba, {name}",
