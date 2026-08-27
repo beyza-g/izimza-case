@@ -2,12 +2,11 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { onBeforeRouteLeave } from 'vue-router'
-import { AlertTriangle, Plus, Timer, Trash2, UploadCloud, X } from 'lucide-vue-next'
+import { AlertTriangle, Eye, Plus, Timer, Trash2, UploadCloud, X } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
 import { otpLength, recipients as recipientSeed } from '@/data/mockData'
-import db from '@mock-data/db.json'
-import { simulateRequest, MockNetworkError } from '@/lib/mockApi'
+import { sendOtpCode, verifyOtpCode, OtpExpiredError, OtpInvalidError } from '@/api/otp'
 import { downloadTextFile } from '@/lib/download'
 import { maskPhone } from '@/lib/phone'
 import {
@@ -31,6 +30,7 @@ import {
   type RawDocType,
 } from '@/api/documents'
 import TimestampCommitModal from '@/components/timestamp/TimestampCommitModal.vue'
+import FilePreviewSheet from '@/components/timestamp/FilePreviewSheet.vue'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -54,7 +54,7 @@ function inferDocType(filename: string): RawDocType {
 // value — 'idle' vs anything else. Stage 2 (commit: OTP through send) is
 // entirely owned by TimestampCommitModal, which is simply mounted whenever
 // flow is one of the modal steps; there is no separate "panel step".
-type Flow = 'idle' | 'summary' | 'otp' | 'otp-expired' | 'result' | 'send' | 'sent'
+type Flow = 'idle' | 'summary' | 'otp' | 'result' | 'send' | 'sent'
 
 const { t } = useI18n({ useScope: 'global' })
 const queryClient = useQueryClient()
@@ -94,7 +94,7 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const otp = ref<string[]>(Array(otpLength).fill(''))
 const otpError = ref('')
 const commitModalRef = ref<InstanceType<typeof TimestampCommitModal> | null>(null)
-const countdown = ref(db.otp.expirySeconds)
+const countdown = ref(0)
 let countdownTimer: number | null = null
 let commitAbortController: AbortController | null = null
 
@@ -117,6 +117,11 @@ const countdownLabel = computed(() => {
   const s = countdown.value % 60
   return `${m}:${String(s).padStart(2, '0')}`
 })
+// Derived, not a separate Flow state — the OTP screen never navigates away
+// on expiry, it just changes what its own "resend" affordance looks like.
+// The client timer only drives this display; the real, authoritative
+// expiry decision happens server-side in verify() below.
+const isOtpExpired = computed(() => countdown.value <= 0)
 
 // Stage 2: every step from OTP through send/sent lives in the commit modal.
 // There is no separate "upload locked" flag any more — once one of these is
@@ -125,7 +130,6 @@ const countdownLabel = computed(() => {
 const isModalStep = computed(
   () =>
     flow.value === 'otp' ||
-    flow.value === 'otp-expired' ||
     flow.value === 'result' ||
     flow.value === 'send' ||
     flow.value === 'sent',
@@ -139,7 +143,7 @@ const isModalStep = computed(
 // something (editor auto-format, most likely) kept stripping them back out
 // across sessions. A computed sidesteps the ambiguity for good: no `as`/`|`
 // ever appears inside a template expression.
-const modalStep = computed(() => flow.value as 'otp' | 'otp-expired' | 'result' | 'send' | 'sent')
+const modalStep = computed(() => flow.value as 'otp' | 'result' | 'send' | 'sent')
 
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
@@ -148,6 +152,21 @@ function formatBytes(bytes: number) {
 
 function pickFile() {
   fileInput.value?.click()
+}
+
+// The raw File a QueueFile carries never leaves the browser's memory —
+// available regardless of status (queued/processing/done/error), so
+// preview isn't gated on the commit having happened yet. The sheet takes
+// the whole queue plus a starting index rather than one file, so the
+// user can page between every queued file without reopening it.
+const previewIndex = ref<number | null>(null)
+
+function openPreview(index: number) {
+  previewIndex.value = index
+}
+
+function closePreview() {
+  previewIndex.value = null
 }
 
 let nextLocalId = 1
@@ -244,15 +263,17 @@ function confirmClearAll() {
   clearAllDialogOpen.value = false
 }
 
-function startCountdown() {
+// Seeded from the server's own expiresAt (returned by sendOtpCode()), not
+// a locally-guessed duration — the visible countdown and the value the
+// server actually checks against can never disagree about when "now" is
+// relative to expiry, only about whether the interval below has ticked
+// down far enough yet to *show* it as expired.
+function startCountdown(expiresAt: number) {
   stopCountdown()
-  countdown.value = db.otp.expirySeconds
+  countdown.value = Math.max(0, Math.round((expiresAt - Date.now()) / 1000))
   countdownTimer = window.setInterval(() => {
-    countdown.value -= 1
-    if (countdown.value <= 0) {
-      stopCountdown()
-      flow.value = 'otp-expired'
-    }
+    countdown.value = Math.max(0, countdown.value - 1)
+    if (countdown.value <= 0) stopCountdown()
   }, 1000)
 }
 
@@ -272,28 +293,36 @@ async function requestOtp() {
   if (queuedFiles.value.length === 0 || insufficientBalance.value || submitting.value) return
   submitting.value = true
   try {
-    await simulateRequest(true, { delay: 400 })
+    const session = await sendOtpCode()
     queue.value.forEach((f) => {
       if (f.status === 'queued') f.status = 'processing'
     })
     otp.value = Array(otpLength).fill('')
     otpError.value = ''
-    startCountdown()
+    startCountdown(session.expiresAt)
     flow.value = 'otp'
     nextTick(() => commitModalRef.value?.focusFirst())
-  } catch (error) {
-    if (error instanceof MockNetworkError) pushToast(error.message, { retry: requestOtp })
+  } catch {
+    // Network/5xx toast already surfaced by the axios interceptor.
   } finally {
     submitting.value = false
   }
 }
 
-function resendOtp() {
-  otp.value = Array(otpLength).fill('')
-  otpError.value = ''
-  startCountdown()
-  flow.value = 'otp'
-  nextTick(() => commitModalRef.value?.focusFirst())
+async function resendOtp() {
+  if (submitting.value) return
+  submitting.value = true
+  try {
+    const session = await sendOtpCode()
+    otp.value = Array(otpLength).fill('')
+    otpError.value = ''
+    startCountdown(session.expiresAt)
+    nextTick(() => commitModalRef.value?.focusFirst())
+  } catch {
+    // Network/5xx toast already surfaced by the axios interceptor.
+  } finally {
+    submitting.value = false
+  }
 }
 
 // The single reset/dismiss path shared by "Timestamp a new document", "Cancel",
@@ -378,15 +407,39 @@ async function retryAllErrors() {
 async function verify() {
   if (!otpComplete.value || submitting.value) return
 
-  if (otp.value.join('') !== db.otp.correctCode) {
-    otpError.value = t('timestamp.otp.wrongCode')
-    otp.value = Array(otpLength).fill('')
-    nextTick(() => commitModalRef.value?.focusFirst())
+  submitting.value = true
+  try {
+    // The server, not this file's own countdown, is the actual authority
+    // on both correctness and expiry — a client whose timer hasn't
+    // visually reached zero yet still gets corrected here if the real
+    // session already lapsed.
+    await verifyOtpCode(otp.value.join(''))
+  } catch (error) {
+    submitting.value = false
+    if (error instanceof OtpExpiredError) {
+      // countdown -> 0 flips isOtpExpired, which is what actually drives
+      // the resend affordance's highlighted/clickable state — this isn't
+      // a separate transition, just the same derived flag the visible
+      // timer already reaching zero would have set on its own.
+      countdown.value = 0
+      stopCountdown()
+      otpError.value = t('timestamp.otp.expiredError')
+      otp.value = Array(otpLength).fill('')
+      nextTick(() => commitModalRef.value?.focusFirst())
+      return
+    }
+    if (error instanceof OtpInvalidError) {
+      otpError.value = t('timestamp.otp.wrongCode')
+      otp.value = Array(otpLength).fill('')
+      nextTick(() => commitModalRef.value?.focusFirst())
+      return
+    }
+    // Network/5xx — the interceptor's own toast already fired; leave the
+    // entered digits alone so the user can just retry without retyping.
     return
   }
 
   otpError.value = ''
-  submitting.value = true
   stopCountdown()
   commitAbortController = new AbortController()
   const { signal } = commitAbortController
@@ -659,7 +712,7 @@ onBeforeUnmount(() => {
 
           <div class="max-h-[420px] lg:max-h-[490px] overflow-y-auto scrollbar-thin">
             <div
-              v-for="file in queue"
+              v-for="(file, index) in queue"
               :key="file.id"
               class="flex items-center gap-3 px-5 py-3.5 border-b border-border last:border-b-0"
             >
@@ -691,6 +744,15 @@ onBeforeUnmount(() => {
               >
                 {{ t(`timestamp.queue.status.${file.status}`) }}
               </span>
+
+              <button
+                type="button"
+                class="w-7 h-7 flex-none rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground flex items-center justify-center transition-colors"
+                :aria-label="t('timestamp.queue.previewFile', { name: file.name })"
+                @click="openPreview(index)"
+              >
+                <Eye class="w-3.5 h-3.5" />
+              </button>
 
               <button
                 v-if="file.status === 'error'"
@@ -731,8 +793,8 @@ onBeforeUnmount(() => {
       </div>
 
       <!-- Summary/idle panel — still inline. Everything from OTP onward
-           (otp/otp-expired/result/send/sent) lives in TimestampCommitModal
-           instead, mounted once below regardless of breakpoint. -->
+           (otp/result/send/sent) lives in TimestampCommitModal instead,
+           mounted once below regardless of breakpoint. -->
       <div
         class="bg-card border border-border rounded-2xl p-6 flex flex-col gap-4 shadow-[0_20px_40px_-26px_rgba(0,0,0,0.3)]"
       >
@@ -918,6 +980,7 @@ onBeforeUnmount(() => {
       :step="modalStep"
       :otp-error="otpError"
       :otp-complete="otpComplete"
+      :is-otp-expired="isOtpExpired"
       :submitting="submitting"
       :countdown="countdown"
       :countdown-label="countdownLabel"
@@ -944,6 +1007,8 @@ onBeforeUnmount(() => {
       @download="downloadResults"
       @dismiss="resetFlow"
     />
+
+    <FilePreviewSheet :files="queue" :initial-index="previewIndex" @dismiss="closePreview" />
 
     <AlertDialog v-model:open="clearAllDialogOpen">
       <AlertDialogContent>

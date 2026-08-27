@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { AlertTriangle, Check, Download, Mail, Search } from 'lucide-vue-next'
+import { AlertCircle, AlertTriangle, Check, Download, Mail, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Recipient } from '@/data/mockData'
 
 const { t } = useI18n({ useScope: 'global' })
 
 const props = defineProps<{
-  step: 'otp' | 'otp-expired' | 'result' | 'send' | 'sent'
+  step: 'otp' | 'result' | 'send' | 'sent'
   otpError: string
   otpComplete: boolean
+  isOtpExpired: boolean
   submitting: boolean
   countdown: number
   countdownLabel: string
@@ -169,16 +170,41 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
         @keydown="onOtpKeydown(i, $event)"
       />
     </div>
-    <p v-if="otpError" class="text-xs text-destructive m-0 -mt-2">{{ otpError }}</p>
+    <!-- The expired status label below is the single source of truth for
+         "this code is expired" — a failed submit while expired still turns
+         the digit boxes' border red (via otpError, unchanged), but doesn't
+         also render a second, redundant text message saying the same thing
+         a different way. otpError's text only ever shows for the *other*
+         failure mode: a wrong-but-not-expired code. -->
+    <p v-if="otpError && !isOtpExpired" class="text-xs text-destructive m-0 -mt-2">
+      {{ otpError }}
+    </p>
     <div class="flex items-center justify-between">
-      <span class="font-mono text-xs text-muted-foreground">{{
-        t('timestamp.otp.remainingTime', { time: countdownLabel })
-      }}</span>
+      <span
+        class="font-mono text-xs flex items-center gap-1.5"
+        :class="isOtpExpired ? 'text-destructive font-medium' : 'text-muted-foreground'"
+      >
+        <AlertCircle v-if="isOtpExpired" class="w-3.5 h-3.5 flex-none" />
+        {{
+          isOtpExpired
+            ? t('timestamp.otp.expiredLabel')
+            : t('timestamp.otp.remainingTime', { time: countdownLabel })
+        }}
+      </span>
+      <!-- Same position regardless of state — expiry doesn't move this
+           control anywhere, it just switches it from an inert label to a
+           genuinely clickable, visually emphasized affordance. Warning-toned,
+           not the main-CTA accent color: resending isn't the positive/primary
+           action here, it's a recovery step after a lapsed code. -->
       <button
         type="button"
-        class="text-xs font-medium transition-colors disabled:cursor-not-allowed"
-        :class="countdown > 0 ? 'text-muted-foreground' : 'text-primary'"
-        :disabled="countdown > 0"
+        class="text-xs font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
+        :class="
+          isOtpExpired
+            ? 'text-warning bg-[color-mix(in_oklch,var(--warning)_15%,transparent)] px-3 py-1.5 hover:bg-[color-mix(in_oklch,var(--warning)_22%,transparent)]'
+            : 'text-muted-foreground px-1 py-1.5'
+        "
+        :disabled="!isOtpExpired"
         @click="emit('resend-otp')"
       >
         {{ t('timestamp.otp.resend') }}
@@ -195,43 +221,6 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
     </button>
     <span
       class="text-xs font-medium text-muted-foreground rounded-lg text-center py-1 cursor-pointer"
-      @click="emit('cancel-otp')"
-      >{{ t('common.actions.discard') }}</span
-    >
-  </template>
-
-  <!-- OTP expired -->
-  <template v-else-if="step === 'otp-expired'">
-    <div class="flex items-center justify-between">
-      <span class="text-[15px] font-semibold">{{ t('timestamp.otp.title') }}</span>
-      <span class="font-mono text-[10px] tracking-wide uppercase text-destructive pr-8">{{
-        t('timestamp.otpExpired.badge')
-      }}</span>
-    </div>
-    <div class="flex-1 flex flex-col items-center justify-center gap-3.5 text-center py-4">
-      <span
-        class="w-11 h-11 rounded-full bg-destructive/10 text-destructive flex items-center justify-center"
-      >
-        <AlertTriangle class="w-5 h-5" />
-      </span>
-      <div>
-        <p class="text-[15px] font-semibold tracking-tight m-0 mb-1">
-          {{ t('timestamp.otpExpired.title') }}
-        </p>
-        <p class="text-[13px] leading-relaxed text-muted-foreground max-w-[30ch] m-0">
-          {{ t('timestamp.otpExpired.description') }}
-        </p>
-      </div>
-    </div>
-    <button
-      type="button"
-      class="w-full bg-accent text-accent-foreground rounded-[11px] py-3.5 text-[15px] font-semibold"
-      @click="emit('resend-otp')"
-    >
-      {{ t('timestamp.otpExpired.resend') }}
-    </button>
-    <span
-      class="text-xs font-medium text-muted-foreground rounded-lg py-1 text-center cursor-pointer"
       @click="emit('cancel-otp')"
       >{{ t('common.actions.discard') }}</span
     >
