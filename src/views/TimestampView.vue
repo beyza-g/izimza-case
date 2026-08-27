@@ -17,6 +17,8 @@ import {
 } from '@/lib/creditMath'
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
+import { useDropzone, hasAcceptedExtension } from '@/composables/useDropzone'
+import { pendingUploadFiles } from '@/composables/usePendingUpload'
 import { useAccount } from '@/queries/useAccount'
 import { useProfile } from '@/queries/useProfile'
 import { useTimestampQueueStore, type QueueFile } from '@/stores/timestampQueue'
@@ -150,19 +152,22 @@ function pickFile() {
 
 let nextLocalId = 1
 
-// Purely local: picking a file no longer touches the server at all — nothing
-// is created until commitFile() actually verifies the OTP and commits it, so
-// there's no server-side "pending" document for a merely-selected file to
-// leave behind (the ghost-document bug this replaces).
-function onFilesChosen(event: Event) {
-  const input = event.target as HTMLInputElement
-  const files = Array.from(input.files ?? [])
-  input.value = ''
+// Single entry point for accepting files, regardless of how they arrived —
+// the hidden <input>'s change event, a drop on the dropzone, or a handoff
+// from Dashboard's card (see usePendingUpload). One acceptance path means
+// dedupe/type-validation/queueing logic can never drift between them.
+function processFiles(files: File[]) {
   if (!files.length) return
 
+  const rejectedNames: string[] = []
   const duplicateNames: string[] = []
 
   for (const file of files) {
+    if (!hasAcceptedExtension(file.name)) {
+      rejectedNames.push(file.name)
+      continue
+    }
+
     const size = formatBytes(file.size)
     if (queue.value.some((f) => f.name === file.name && f.size === size)) {
       duplicateNames.push(file.name)
@@ -180,12 +185,31 @@ function onFilesChosen(event: Event) {
       flow.value = 'summary'
     }
   }
+
+  if (rejectedNames.length === 1) {
+    pushToast(t('timestamp.toasts.unsupportedOne', { name: rejectedNames[0] }))
+  } else if (rejectedNames.length > 1) {
+    pushToast(t('timestamp.toasts.unsupportedMany', { count: rejectedNames.length }))
+  }
   if (duplicateNames.length === 1) {
     pushToast(t('timestamp.toasts.duplicateOne', { name: duplicateNames[0] }))
   } else if (duplicateNames.length > 1) {
     pushToast(t('timestamp.toasts.duplicateMany', { count: duplicateNames.length }))
   }
 }
+
+// Purely local: picking a file no longer touches the server at all — nothing
+// is created until commitFile() actually verifies the OTP and commits it, so
+// there's no server-side "pending" document for a merely-selected file to
+// leave behind (the ghost-document bug this replaces).
+function onFilesChosen(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  processFiles(files)
+}
+
+const { dragActive, onDragEnter, onDragLeave, onDrop } = useDropzone(processFiles)
 
 function removeFile(id: number) {
   const file = queue.value.find((f) => f.id === id)
@@ -545,6 +569,10 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
 
 onMounted(() => {
   window.addEventListener('beforeunload', handleBeforeUnload)
+  if (pendingUploadFiles.value.length) {
+    processFiles(pendingUploadFiles.value)
+    pendingUploadFiles.value = []
+  }
 })
 
 onBeforeUnmount(() => {
@@ -575,8 +603,21 @@ onBeforeUnmount(() => {
       <div class="min-w-0 flex flex-col gap-3.5">
         <div
           v-if="queue.length === 0"
-          class="border-[1.5px] border-dashed border-primary/30 rounded-2xl bg-card flex flex-col items-center justify-center gap-4 text-center p-10 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] transition-shadow duration-150"
+          tabindex="0"
+          :aria-label="t('common.uploadDropzoneLabel')"
+          class="border-[1.5px] border-dashed rounded-2xl bg-card flex flex-col items-center justify-center gap-4 text-center p-10 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] transition duration-200"
+          :class="
+            dragActive
+              ? 'border-primary bg-[color-mix(in_oklch,var(--primary)_8%,transparent)]'
+              : 'border-[color-mix(in_oklch,var(--primary)_30%,transparent)] hover:border-primary hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]'
+          "
           @click="pickFile"
+          @keydown.enter.prevent="pickFile"
+          @keydown.space.prevent="pickFile"
+          @dragenter.prevent="onDragEnter"
+          @dragover.prevent
+          @dragleave.prevent="onDragLeave"
+          @drop.prevent="onDrop"
         >
           <UploadCloud class="w-9 h-9 text-primary" />
           <div>
@@ -585,12 +626,12 @@ onBeforeUnmount(() => {
               {{ t('timestamp.dropzone.description') }}
             </p>
           </div>
-          <button
-            type="button"
+          <span
+            aria-hidden="true"
             class="bg-accent text-accent-foreground rounded-[10px] px-5 py-3 text-sm font-semibold"
           >
             {{ t('common.actions.chooseFile') }}
-          </button>
+          </span>
         </div>
 
         <div v-else class="bg-card border border-border rounded-2xl overflow-hidden">

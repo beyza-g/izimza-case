@@ -11,6 +11,7 @@
       "download": "İndir",
       "close": "Kapat"
     },
+    "uploadDropzoneLabel": "Belge yüklemek için tıklayın",
     "nav": {
       "home": "Anasayfa",
       "sign": "İmzala",
@@ -85,7 +86,8 @@
       "downloaded": "\"{name}\" indirildi.",
       "emailed": "\"{name}\" e-posta ile gönderildi.",
       "deleted": "Belge silindi.",
-      "deleteFailed": "Belge silinemedi, tekrar deneyin."
+      "deleteFailed": "Belge silinemedi, tekrar deneyin.",
+      "queuedForTimestamp": "Belge Zaman Damgalama kuyruğuna eklendi."
     }
   },
   "timestamp": {
@@ -145,6 +147,8 @@
       "leave": "Ayrıl"
     },
     "toasts": {
+      "unsupportedOne": "\"{name}\" desteklenmeyen bir dosya türü.",
+      "unsupportedMany": "{count} dosya desteklenmeyen bir türde olduğu için eklenmedi.",
       "duplicateOne": "\"{name}\" zaten eklendi.",
       "duplicateMany": "{count} dosya zaten kuyrukta olduğu için eklenmedi.",
       "cleared": "Kuyruk temizlendi.",

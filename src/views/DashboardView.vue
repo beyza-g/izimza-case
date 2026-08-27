@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import { useRouter } from 'vue-router'
 import { Download, Mail, MoreVertical, Trash2, UploadCloud } from 'lucide-vue-next'
 import { useQueryClient } from '@tanstack/vue-query'
 import StatCard from '@/components/ui/StatCard.vue'
@@ -30,6 +31,8 @@ import { downloadTextFile } from '@/lib/download'
 import { formatDate } from '@/lib/formatDate'
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
+import { useDropzone, hasAcceptedExtension } from '@/composables/useDropzone'
+import { pendingUploadFiles } from '@/composables/usePendingUpload'
 
 // Single source of truth for the Recently Archived Documents table's column
 // widths — header, loading skeleton, and data rows all bind to this so they
@@ -44,6 +47,7 @@ import { useCurrentUser } from '@/composables/useCurrentUser'
 const DOC_TABLE_COLS = 'grid-cols-[1fr_auto_40px] md:grid-cols-[2.2fr_1fr_1fr_40px]'
 
 const { t } = useI18n({ useScope: 'global' })
+const router = useRouter()
 const fileInput = ref<HTMLInputElement | null>(null)
 const accountQuery = useAccount()
 const documentsQuery = useDocuments()
@@ -75,6 +79,50 @@ const archive = computed(() => {
     percent: Math.min(100, Math.round((acc.archiveUsedMb / acc.archiveLimitMb) * 100)),
   }
 })
+
+function pickFile() {
+  fileInput.value?.click()
+}
+
+// This card has no upload pipeline of its own — signing isn't implemented,
+// only timestamping is — so an accepted file has nowhere to go on this page.
+// Rather than a dead-end drop, it's handed off via pendingUploadFiles and the
+// user is taken to Timestamp, whose own onMounted() consumes it through the
+// exact same processFiles() its native dropzone uses.
+function acceptFiles(files: File[]) {
+  if (!files.length) return
+
+  const accepted: File[] = []
+  const rejectedNames: string[] = []
+  for (const file of files) {
+    if (hasAcceptedExtension(file.name)) accepted.push(file)
+    else rejectedNames.push(file.name)
+  }
+
+  if (rejectedNames.length === 1) {
+    pushToast(t('timestamp.toasts.unsupportedOne', { name: rejectedNames[0] }))
+  } else if (rejectedNames.length > 1) {
+    pushToast(t('timestamp.toasts.unsupportedMany', { count: rejectedNames.length }))
+  }
+
+  if (accepted.length) {
+    pendingUploadFiles.value = accepted
+    // Shown before the navigation itself so the redirect reads as an
+    // explained outcome ("your file went to the Timestamp queue") rather
+    // than an unexplained jump away from the page the user was just on.
+    pushToast(t('dashboard.toasts.queuedForTimestamp'), { tone: 'success' })
+    router.push({ name: 'timestamp' })
+  }
+}
+
+function onFilesChosen(event: Event) {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  input.value = ''
+  acceptFiles(files)
+}
+
+const { dragActive, onDragEnter, onDragLeave, onDrop } = useDropzone(acceptFiles)
 
 function downloadDocument(doc: Document) {
   // A real, observable file — this mock backend never stored the original
@@ -211,7 +259,21 @@ function confirmDelete() {
     </div>
 
     <div
-      class="border-[1.5px] border-dashed border-primary/30 rounded-2xl bg-card p-6 md:p-8 flex flex-col md:flex-row items-center md:justify-between gap-6"
+      tabindex="0"
+      :aria-label="t('common.uploadDropzoneLabel')"
+      class="border-[1.5px] border-dashed rounded-2xl bg-card transition duration-200 cursor-pointer p-6 md:p-8 flex flex-col md:flex-row items-center md:justify-between gap-6"
+      :class="
+        dragActive
+          ? 'border-primary bg-[color-mix(in_oklch,var(--primary)_8%,transparent)]'
+          : 'border-[color-mix(in_oklch,var(--primary)_30%,transparent)] hover:border-primary hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]'
+      "
+      @click="pickFile"
+      @keydown.enter.prevent="pickFile"
+      @keydown.space.prevent="pickFile"
+      @dragenter.prevent="onDragEnter"
+      @dragover.prevent
+      @dragleave.prevent="onDragLeave"
+      @drop.prevent="onDrop"
     >
       <div class="flex items-center gap-5">
         <div
@@ -226,14 +288,20 @@ function confirmDelete() {
           </p>
         </div>
       </div>
-      <button
-        type="button"
+      <span
+        aria-hidden="true"
         class="flex-none bg-accent text-accent-foreground rounded-[10px] px-5 py-3 text-sm font-semibold"
-        @click="fileInput?.click()"
       >
         {{ t('common.actions.chooseFile') }}
-      </button>
-      <input ref="fileInput" type="file" class="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx,.png" />
+      </span>
+      <input
+        ref="fileInput"
+        type="file"
+        multiple
+        class="hidden"
+        accept=".pdf,.doc,.docx,.xls,.xlsx,.png"
+        @change="onFilesChosen"
+      />
     </div>
 
     <div class="bg-card border border-border rounded-2xl overflow-hidden">

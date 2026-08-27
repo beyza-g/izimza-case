@@ -11,6 +11,7 @@
       "download": "Download",
       "close": "Close"
     },
+    "uploadDropzoneLabel": "Click to upload a document",
     "nav": {
       "home": "Home",
       "sign": "Sign",
@@ -85,7 +86,8 @@
       "downloaded": "\"{name}\" downloaded.",
       "emailed": "\"{name}\" sent by email.",
       "deleted": "Document deleted.",
-      "deleteFailed": "Couldn't delete the document, please try again."
+      "deleteFailed": "Couldn't delete the document, please try again.",
+      "queuedForTimestamp": "Document added to the Timestamp queue."
     }
   },
   "timestamp": {
@@ -145,6 +147,8 @@
       "leave": "Leave"
     },
     "toasts": {
+      "unsupportedOne": "\"{name}\" is not a supported file type.",
+      "unsupportedMany": "{count} files are not a supported file type and were not added.",
       "duplicateOne": "\"{name}\" was already added.",
       "duplicateMany": "{count} files were already in the queue and were not added.",
       "cleared": "Queue cleared.",
