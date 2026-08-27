@@ -1,7 +1,23 @@
 # İzİmza — Frontend Case Study
 
+> For the detailed catalog of UX/architecture decisions,
+> see [UX_DECISIONS.md](./UX_DECISIONS.md).
+
+## Test Account
+
+> **Email:** demo@izimza-case.com
+> **Password:** Demo-izimza12@!
+
+## Timestamping — Verification Code
+
+> The mock environment never sends a real SMS to a phone. On the OTP
+> screen, the fixed code for a successful verification is: **444444**
+>
+> (Entering an incorrect code triggers the error scenario, useful for
+> testing the real OTP flow's failure path.)
+
 A rebuild of portal.izimza.com's existing UI, treated as a wireframe, for an
-İzometri recruiting case study — modern UI/UX plus a senior-level frontend
+İzometri recruiting case study — modern UI/UX plus a frontend
 architecture. Built on Vue 3 + TypeScript (strict); talks to a mock backend
 over real HTTP (json-server), authenticates via Auth0 (Authorization Code +
 PKCE), manages server state/caching with TanStack Query, and validates forms
@@ -9,7 +25,10 @@ with schema-based Vee-Validate + Zod.
 
 ## Setup
 
-Requires Node 22+.
+Requires Node `^22.18.0` or `>=24.12.0` (see `engines` in `package.json`) —
+alpha/nightly Node builds are not supported and can break the test suite in
+surprising ways (e.g. Node's own experimental `localStorage` global shadowing
+the jsdom one the app relies on).
 
 ```sh
 npm install
@@ -104,6 +123,8 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 | 23  | Toast notifications had no live region, so screen reader users weren't informed when one appeared                                                                                                                                                               | Added `role="status"` + `aria-live="polite"` to the toast container                                                                                                                                                                                                    |
 | 24  | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused in the codebase                                                                                                                                                                     | Deleted — confirmed zero imports anywhere                                                                                                                                                                                                                              |
 | 25  | All UI copy was hardcoded Turkish, with no path to a second language                                                                                                                                                                                            | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, `locale` persisted to `localStorage` mirroring `useTheme.ts`'s own pattern; status-badge/nav labels moved to key-based display mappings kept separate from the `documents.ts` anti-corruption layer |
+| 26  | The real app splits its API across a separate subdomain per feature with inconsistent casing (e.g. `profileapi.izimza.com/api/Dashboard/...`) — no single, predictable resource surface                                                                         | One base URL (`json-server` on `:3001`), flat and consistently-cased resource naming (`/documents`, `/account`, `/profile`, …)                                                                                                                                         |
+| 27  | Content pops in abruptly after the page finishes loading, shifting the layout underneath it (no placeholder holds the eventual space)                                                                                                                           | `SkeletonBlock.vue` — a shimmer-animated block sized to match its eventual content, used wherever data is still loading (e.g. `StatCard.vue`, the dashboard's stat row)                                                                                                |
 
 The rest of this section covers the most consequential of these in more depth.
 
@@ -112,14 +133,19 @@ The rest of this section covers the most consequential of these in more depth.
   surface exists behind auth, localStorage persistence is sufficient.
 
 - **Anti-patterns identified in the current portal.izimza.com, mapped to fixes**:
-  audited the existing product before rebuilding it and treated four concrete
+  audited the existing product before rebuilding it and treated six concrete
   anti-patterns as the spine of the architecture rather than as an afterthought —
   console logging left in production (stripped from the build), redundant
   network requests on every navigation (TanStack Query `staleTime`/cache instead
   of refetch-on-mount), REST-incorrect endpoints (POST used where GET/resource
-  semantics apply) replaced by a properly resource-oriented json-server API, and
+  semantics apply) replaced by a properly resource-oriented json-server API,
   inconsistent ad hoc response-unwrapping scattered across call sites,
-  centralized into one axios interceptor (`unwrapResponse` in `http.ts`).
+  centralized into one axios interceptor (`unwrapResponse` in `http.ts`), a
+  per-feature subdomain split with inconsistent casing (e.g.
+  `profileapi.izimza.com/api/Dashboard/...`) replaced by one base URL and flat,
+  consistently-cased resource names, and content popping in post-load with no
+  placeholder holding its space, fixed with a shimmer-animated
+  `SkeletonBlock.vue` sized to the eventual content.
 
 - **Auth0 SPA SDK (Authorization Code + PKCE) instead of a hand-rolled auth**:
   `@auth0/auth0-vue` was used instead of building custom login/session/token-
@@ -214,7 +240,7 @@ The rest of this section covers the most consequential of these in more depth.
 
 - **Explicitly deferred / out of scope**: toast-stacking when several retries
   fail back-to-back (cosmetic noise, flagged but not fixed); the
-  `İmzala`/`Arşiv`/`Doküman Yönetimi` nav destinations and three unimplemented
+  `Sign`/`Archive`/`Document Management` nav destinations and three unimplemented
   Profile sub-tabs (visual stubs only — not covered by the source design
   file); and the full Vitest suite — this is a deliberate scope call, not an
   oversight: the case brief lists automated tests as optional, and the time
@@ -288,7 +314,11 @@ reference points while making UI/UX calls, not as a formal study:
   audit-trail/compliance framing, but a single-document signing flow that's
   multi-step and intimidating for a first-time user. The timestamping flow
   here is deliberately flatter: one state machine in a single panel
-  (`idle→ready→otp→result→send`) rather than a multi-page wizard.
+  (`idle→ready→otp→result→send`) rather than a multi-page wizard. File
+  selection itself was deliberately left inline/plain — only the
+  credit-consuming, irreversible commit step (OTP → result) was pulled into
+  a focused modal. This isn't imitating DocuSign's multi-step wizard; it's
+  isolating the one genuinely irreversible moment in the flow.
 - **PandaDoc** — a more modern, colorful UI with strong document templating,
   but a dashboard that's often cluttered with upsell/notification CTAs. The
   dashboard here shows only real state (stats + recent activity), with no
@@ -303,9 +333,3 @@ These three roughly frame the axes this rebuild aimed at: "enterprise trust"
 (DocuSign), "modern/approachable tone" (PandaDoc), and "simplicity/compliance"
 (Yousign) — the "NES doğrulandı" badge above is one concrete outcome of that
 positioning.
-
-// Dosya seçimi bilinçli olarak inline/yalın
-bırakıldı; sadece kontör tüketen ve geri alınamaz commit adımı (OTP →
-sonuç) odaklanmış bir modal'a taşındı — bu, DocuSign'ın çok adımlı akışını
-taklit etmiyor, sadece geri dönüşü olmayan anı kasıtlı olarak izole
-ediyor.
