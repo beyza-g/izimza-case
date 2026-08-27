@@ -1,7 +1,9 @@
 export type DocStatus = 'signed' | 'archived' | 'pending' | 'cancelled'
 
 // Display-only mapping: DocStatus -> i18n key. Kept entirely separate from
-// documents.ts's STATUS_MAP, which maps raw backend strings to DocStatus.
+// the raw-status validation in documents.ts's mapDocument() — the backend
+// already speaks this same English vocabulary directly, so that function
+// only validates/falls back now rather than translating from another one.
 export const statusLabels: Record<DocStatus, string> = {
   signed: 'common.status.signed',
   archived: 'common.status.archived',

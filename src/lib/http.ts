@@ -40,10 +40,10 @@ http.interceptors.request.use(async (config) => {
 })
 
 /**
- * Gerçek portal.izimza.com API'si yanıtları {httpStatusCode, trMessage, data}
- * şeklinde sarmalıyor; bu katman o senaryoda unwrap işlemini burada merkezi
- * olarak yapardı. Mock adapter zaten çıplak veri döndürdüğü için şu an
- * passthrough — response.data tüketen kod tarafında değişiklik gerekmez.
+ * The production portal.izimza.com API wraps responses as {httpStatusCode, trMessage, data}.
+ * In that setup, this adapter layer would unwrap the response payload centrally here.
+ * Since the current mock adapter returns bare data, this is currently a pass-through,
+ * requiring no changes in caller code that consumes `response.data`.
  */
 function unwrapResponse(response: AxiosResponse) {
   return response

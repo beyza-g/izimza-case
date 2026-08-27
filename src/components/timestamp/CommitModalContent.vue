@@ -137,9 +137,9 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
   <template v-if="step === 'otp'">
     <div class="flex items-center justify-between">
       <span class="text-[15px] font-semibold">{{ t('timestamp.otp.title') }}</span>
-      <span class="font-mono text-[10px] tracking-wide uppercase text-muted-foreground pr-8"
-        >{{ t('timestamp.documentsCount', { count: processingCount }) }}</span
-      >
+      <span class="font-mono text-[10px] tracking-wide uppercase text-muted-foreground pr-8">{{
+        t('timestamp.documentsCount', { count: processingCount })
+      }}</span>
     </div>
     <div>
       <p class="text-[15px] font-semibold tracking-tight m-0 mb-1.5">
@@ -200,13 +200,13 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
     >
   </template>
 
-  <!-- OTP süresi doldu -->
+  <!-- OTP expired -->
   <template v-else-if="step === 'otp-expired'">
     <div class="flex items-center justify-between">
       <span class="text-[15px] font-semibold">{{ t('timestamp.otp.title') }}</span>
-      <span class="font-mono text-[10px] tracking-wide uppercase text-destructive pr-8"
-        >{{ t('timestamp.otpExpired.badge') }}</span
-      >
+      <span class="font-mono text-[10px] tracking-wide uppercase text-destructive pr-8">{{
+        t('timestamp.otpExpired.badge')
+      }}</span>
     </div>
     <div class="flex-1 flex flex-col items-center justify-center gap-3.5 text-center py-4">
       <span
@@ -237,7 +237,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
     >
   </template>
 
-  <!-- Sonuç / Gönderildi -->
+  <!-- Result / Sent -->
   <template v-else-if="step === 'result' || step === 'sent'">
     <div class="flex items-center justify-between">
       <span class="text-[15px] font-semibold">{{ t('timestamp.result.title') }}</span>
@@ -285,7 +285,9 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
         </span>
         <div>
           <p class="text-[15px] font-semibold tracking-tight m-0 mb-0.5">
-            {{ t('timestamp.result.partialTitle', { done: lastCompletedCount, failed: errorCount }) }}
+            {{
+              t('timestamp.result.partialTitle', { done: lastCompletedCount, failed: errorCount })
+            }}
           </p>
           <p class="text-xs text-muted-foreground m-0">
             {{ t('timestamp.result.creditsLeft', { count: remainingCredits }) }}
@@ -394,7 +396,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
     </div>
   </template>
 
-  <!-- E-postayla gönder -->
+  <!-- Send by email -->
   <template v-else-if="step === 'send'">
     <div class="flex items-center justify-between">
       <span class="text-[15px] font-semibold">{{ t('timestamp.send.title') }}</span>
