@@ -125,6 +125,7 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 | 25  | All UI copy was hardcoded Turkish, with no path to a second language                                                                                                                                                                                            | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, `locale` persisted to `localStorage` mirroring `useTheme.ts`'s own pattern; status-badge/nav labels moved to key-based display mappings kept separate from the `documents.ts` anti-corruption layer |
 | 26  | The real app splits its API across a separate subdomain per feature with inconsistent casing (e.g. `profileapi.izimza.com/api/Dashboard/...`) — no single, predictable resource surface                                                                         | One base URL (`json-server` on `:3001`), flat and consistently-cased resource naming (`/documents`, `/account`, `/profile`, …)                                                                                                                                         |
 | 27  | Content pops in abruptly after the page finishes loading, shifting the layout underneath it (no placeholder holds the eventual space)                                                                                                                           | `SkeletonBlock.vue` — a shimmer-animated block sized to match its eventual content, used wherever data is still loading (e.g. `StatCard.vue`, the dashboard's stat row)                                                                                                |
+| 28  | Dashboard's "Sign now" card promised drag-and-drop copy with zero event handlers wired, and has no processing pipeline of its own since Sign isn't implemented — a valid drop there was a dead end                                                              | Real drag/drop handling shared with Timestamp's own dropzone (`useDropzone.ts`, one file-acceptance path, not two); a dropped/selected file is routed to the working Timestamp queue instead of discarded — see below                                                  |
 
 The rest of this section covers the most consequential of these in more depth.
 
@@ -246,6 +247,20 @@ The rest of this section covers the most consequential of these in more depth.
   oversight: the case brief lists automated tests as optional, and the time
   budget instead went to the mandatory requirements (Auth0, real HTTP,
   Zod-schema validation) and to this project's own consistency audit.
+
+- **Dashboard's "Sign now" card redirects a dropped/selected document into
+  the Timestamp flow, not a Sign flow**: the card promises drag-and-drop
+  ("...drag here or choose from your computer"), but since Sign is one of
+  the deliberately out-of-scope nav stubs above, there is no Sign pipeline
+  for an accepted file to join. Rather than a dead-end drop, the file is
+  handed off (`usePendingUpload.ts`) to the one flow that's actually
+  implemented and working — Timestamp — with a toast shown first
+  ("Document added to the Timestamp queue") so the redirect reads as an
+  explained outcome, not a silent jump away from the page the user was
+  just on. This is conceptually consistent with how a dropped file on the
+  real portal.izimza.com can be handed off from the context it was dropped
+  in to a different processing flow — it produces a meaningful result
+  instead of an empty "drop."
 
 - **shadcn-vue installed later, for the row-actions menu, not from day one**: CLAUDE.md
   named "Tailwind + Shadcn Vue" as the intended stack and `src/assets/main.css`'s
