@@ -1,0 +1,259 @@
+{
+  "common": {
+    "actions": {
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "discard": "Vazgeç",
+      "retry": "Tekrar dene",
+      "back": "Geri",
+      "chooseFile": "Dosya seç",
+      "download": "İndir",
+      "close": "Kapat"
+    },
+    "nav": {
+      "home": "Anasayfa",
+      "sign": "İmzala",
+      "timestamp": "Zaman Damgala",
+      "timestampShort": "Damga",
+      "archive": "Arşiv",
+      "documents": "Doküman Yönetimi",
+      "account": "Hesap"
+    },
+    "status": {
+      "signed": "İmzalandı",
+      "archived": "Arşivlendi",
+      "pending": "Bekliyor",
+      "cancelled": "İptal"
+    },
+    "errors": {
+      "network": "Bağlantı hatası. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+      "server": "Sunucuda bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+      "generic": "Bir hata oluştu, tekrar deneyin."
+    },
+    "user": {
+      "role": "Hukuk Müşaviri"
+    },
+    "plan": {
+      "enterprise": "Kurumsal"
+    },
+    "language": "Dil",
+    "appearance": "Görünüm",
+    "toggleAppearance": "Görünümü değiştir",
+    "profileSettings": "Profil & Ayarlar",
+    "logout": "Çıkış yap",
+    "requiredField": "Bu alan zorunludur"
+  },
+  "dashboard": {
+    "greeting": "Merhaba, {name}",
+    "pendingSignatures": "Arşivinde bekleyen {count} imza talebi var.",
+    "stats": {
+      "totalSignatures": "Toplam imzalama",
+      "archivedDocuments": "Arşivlenen doküman",
+      "remainingCredits": "Kalan kontör",
+      "archiveSpace": "Arşiv alanı",
+      "unitDocument": "belge",
+      "unitCount": "adet",
+      "noteThisMonth": "Bu ay +{count}",
+      "noteLast30Days": "Son 30 günde +{count}",
+      "noteRenewal": "Yenilenme {date}"
+    },
+    "accountLoadError": "Hesap bilgileri yüklenemedi.",
+    "upload": {
+      "title": "Hemen imzala",
+      "description": "Dosyalarını buraya sürükle ya da bilgisayarından seç · PDF, DOCX, XLSX, PNG · en fazla 50 MB"
+    },
+    "table": {
+      "title": "Son arşivlenen belgeler",
+      "viewAll": "Tümünü gör →",
+      "file": "Dosya",
+      "date": "Tarih",
+      "status": "Durum",
+      "actions": "İşlem",
+      "empty": "Henüz arşivlenmiş belge yok.",
+      "actionsFor": "{name} için işlemler",
+      "emailSend": "E-posta ile gönder"
+    },
+    "deleteDialog": {
+      "title": "Belgeyi sil",
+      "description": "\"{name}\" kalıcı olarak silinecek. Bu işlem geri alınamaz.",
+      "confirm": "Evet, sil",
+      "deleting": "Siliniyor…"
+    },
+    "toasts": {
+      "downloaded": "\"{name}\" indirildi.",
+      "emailed": "\"{name}\" e-posta ile gönderildi.",
+      "deleted": "Belge silindi.",
+      "deleteFailed": "Belge silinemedi, tekrar deneyin."
+    }
+  },
+  "timestamp": {
+    "title": "Zaman damgası al",
+    "subtitle": "Belgenin içeriğini ve zamanını hukuken kanıtlanabilir biçimde sabitler.",
+    "documentsCount": "{count} belge",
+    "dropzone": {
+      "title": "Damgalanacak belgeyi bırak",
+      "description": "Dosyayı buraya sürükle ya da bilgisayarından seç. Birden fazla dosya seçebilirsin · PDF, DOCX, XLSX, PNG · en fazla 50 MB."
+    },
+    "queue": {
+      "title": "Belge kuyruğu",
+      "processing": "İşlem sürüyor",
+      "clearAll": "Tümünü sil",
+      "status": {
+        "queued": "Bekliyor",
+        "processing": "Damgalanıyor",
+        "done": "Tamamlandı",
+        "error": "Hata"
+      },
+      "failedSuffix": "· damgalanamadı",
+      "addMore": "Yeni belge ekle"
+    },
+    "panel": {
+      "title": "İşlem paneli",
+      "idleBadge": "Beklemede",
+      "idleDescription": "Belge yüklendiğinde işlem özeti ve damgalama butonu burada belirir.",
+      "balance": "Bakiye",
+      "credits": "{count} kontör",
+      "processingBadge": "İşlem sürüyor",
+      "processingDescription": "Doğrulama ve sonuç adımları açılan pencerede devam ediyor.",
+      "summary": "İşlem özeti",
+      "insufficientTitle": "Yetersiz kontör bakiyesi",
+      "insufficientDescription": "Kuyruktaki {queued} belge için {cost} kontör gerekiyor, bakiyenizde {remaining} kontör var.",
+      "upgrade": "Planı yükselt →",
+      "deductNotice": "Bu işlem için bakiyenizden {cost} kontör düşülecektir.",
+      "current": "Mevcut",
+      "remaining": "Kalan",
+      "archiveCheckbox": "Tamamlanınca otomatik arşivle",
+      "submit": "Zaman damgala",
+      "submitting": "Gönderiliyor…",
+      "helperText": "Butona bastığında telefonuna doğrulama kodu gönderilir."
+    },
+    "mobileBar": {
+      "insufficient": "yetersiz bakiye",
+      "summary": "{count} belge · {rest}"
+    },
+    "clearDialog": {
+      "title": "Kuyruğu temizle",
+      "description": "Kuyruktaki {count} belge kaldırılacak. Bu işlem geri alınamaz.",
+      "confirm": "Evet, tümünü sil"
+    },
+    "leaveDialog": {
+      "title": "Kaydedilmemiş belgeler var",
+      "description": "Yüklediğin dosyalar kaydedilmedi, ayrılırsan kaybolacak. Devam etmek istiyor musun?",
+      "stay": "Sayfada kal",
+      "leave": "Ayrıl"
+    },
+    "toasts": {
+      "duplicateOne": "\"{name}\" zaten eklendi.",
+      "duplicateMany": "{count} dosya zaten kuyrukta olduğu için eklenmedi.",
+      "cleared": "Kuyruk temizlendi.",
+      "errorCount": "{count} belge damgalanamadı.",
+      "sent": "Belge gönderildi."
+    },
+    "fileError": "Zaman damgalama başarısız oldu.",
+    "otp": {
+      "title": "Doğrulama",
+      "heading": "Telefonuna gelen kodu gir",
+      "description": "{phone} numarasına gönderilen 6 haneli doğrulama kodunu gir.",
+      "digitLabel": "{n}. hane",
+      "wrongCode": "Kod hatalı, tekrar deneyin.",
+      "remainingTime": "Kalan süre {time}",
+      "resend": "Tekrar gönder",
+      "verify": "Doğrula",
+      "verifying": "Doğrulanıyor…"
+    },
+    "otpExpired": {
+      "badge": "Süresi doldu",
+      "title": "Kodun süresi doldu",
+      "description": "Güvenlik nedeniyle doğrulama kodları sınırlı süre geçerlidir. Yeni bir kod gönderelim.",
+      "resend": "Yeniden gönder"
+    },
+    "result": {
+      "title": "Sonuç",
+      "successTitle": "{count} belge damgalandı",
+      "creditsLeft": "{count} kontör kaldı",
+      "archived": "✓ Arşivlendi",
+      "partialTitle": "{done} belge damgalandı, {failed} başarısız",
+      "failureTitle": "Damgalama başarısız",
+      "errorCount": "{count} belge damgalanamadı",
+      "retryAll": "Tümünü tekrar dene",
+      "sentTo": "✓ {count} alıcıya gönderildi",
+      "downloadCount": "İndir ({count})",
+      "newDocument": "Yeni belge damgala"
+    },
+    "send": {
+      "title": "E-postayla gönder",
+      "searchPlaceholder": "Alıcı ara…",
+      "self": "Kendime",
+      "noRecipients": "Kayıtlı alıcın yok —",
+      "addFromSettings": "Ayarlar'dan ekle →",
+      "noResults": "Sonuç bulunamadı.",
+      "addRecipient": "Kayıtlı alıcılarda yok mu? Alıcı ekle →",
+      "submit": "Gönder ({count})",
+      "submitting": "Gönderiliyor…"
+    }
+  },
+  "profile": {
+    "mobileHeading": "Ayarlar",
+    "mobileSubheading": "Hesap ve tercihler",
+    "pageTitle": "Ayarlar · Profil & Güvenlik",
+    "settingsNav": {
+      "security": "Profil & Güvenlik",
+      "signature": "İmza Ayarları",
+      "billing": "Fatura & Abonelik",
+      "recipients": "Kayıtlı Alıcılar"
+    },
+    "personalInfo": {
+      "title": "Kişisel bilgiler",
+      "description": "E-posta adresi hesabın kimliği olduğu için değiştirilemez."
+    },
+    "fields": {
+      "firstName": "Ad",
+      "lastName": "Soyad",
+      "phone": "Telefon numarası",
+      "email": "E-posta"
+    },
+    "saving": "Kaydediliyor…",
+    "kvkkText": "Profil bilgilerinizi kaydettiğinizde KVKK Aydınlatma Metni'ni kabul etmiş olursunuz.",
+    "kvkkReadLink": "Metni oku",
+    "toasts": {
+      "saved": "Profil güncellendi."
+    },
+    "accountMeta": "{email} · {plan} plan · üyelik {memberSince}",
+    "security": {
+      "title": "Güvenlik",
+      "password": "Şifre",
+      "passwordLastChanged": "Son değişim {date}",
+      "changePassword": "Şifre değiştir",
+      "sessions": "Oturumlar",
+      "sessionsInfo": "{deviceCount} aktif cihaz · son giriş {lastLogin}, {location}",
+      "closeAllSessions": "Tümünü kapat"
+    },
+    "badges": {
+      "nesVerified": "NES doğrulandı",
+      "nesTooltip": "Nitelikli Elektronik Sertifika ile doğrulanmış hesap",
+      "nesValidity": "Geçerlilik {date}"
+    },
+    "errors": {
+      "invalidPhone": "Geçerli bir telefon numarası girin"
+    },
+    "password": {
+      "title": "Şifreyi değiştir",
+      "description": "Değişiklikten sonra diğer cihazlardaki oturumlar kapanır.",
+      "current": "Mevcut şifre",
+      "new": "Yeni şifre",
+      "confirm": "Yeni şifre tekrar",
+      "currentError": "Mevcut şifre hatalı",
+      "requirementsTitle": "Şifre gereksinimleri",
+      "changing": "Değiştiriliyor…",
+      "toastSuccess": "Şifre değiştirildi.",
+      "rules": {
+        "minLength": "En az 8 karakter",
+        "upper": "En az 1 büyük harf",
+        "lower": "En az 1 küçük harf",
+        "digit": "En az 1 rakam",
+        "match": "Şifreler eşleşiyor"
+      }
+    }
+  }
+}

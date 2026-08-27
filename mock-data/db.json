@@ -1,0 +1,136 @@
+{
+  "profile": {
+    "firstName": "Beyza",
+    "lastName": "Güzel",
+    "phone": "0(551) 169-6158"
+  },
+  "account": {
+    "totalSignatures": 1284,
+    "signaturesThisMonth": 34,
+    "archivedDocuments": 342,
+    "archivedLast30Days": 58,
+    "remainingCredits": 8,
+    "creditsRenewalDate": "2026-09-01",
+    "archiveUsedMb": 6400,
+    "archiveLimitMb": 20480,
+    "planTier": "enterprise",
+    "memberSince": "2025-03-12",
+    "nesValidUntil": "2027-02-14"
+  },
+  "documents": [
+    {
+      "id": 1,
+      "name": "Kimlik Fotokopisi.png",
+      "type": "png",
+      "sizeMb": 0.2,
+      "uploadedAt": "2026-08-05T17:00:00+03:00",
+      "status": "cancelled"
+    },
+    {
+      "id": 2,
+      "name": "İş Bitirme Tutanağı.pdf",
+      "type": "pdf",
+      "sizeMb": 0.9,
+      "uploadedAt": "2026-08-08T09:15:00+03:00",
+      "status": "archived"
+    },
+    {
+      "id": 3,
+      "name": "Vekaletname Örneği.pdf",
+      "type": "pdf",
+      "sizeMb": 0.3,
+      "uploadedAt": "2026-08-10T13:22:00+03:00",
+      "status": "signed"
+    },
+    {
+      "id": 4,
+      "name": "Distribütörlük Sözleşmesi.pdf",
+      "type": "pdf",
+      "sizeMb": 0.9,
+      "uploadedAt": "2026-08-12T14:00:00+03:00",
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "name": "Personel Sözleşmesi - Ahmet Kaya.docx",
+      "type": "docx",
+      "sizeMb": 0.5,
+      "uploadedAt": "2026-08-15T16:45:00+03:00",
+      "status": "archived"
+    },
+    {
+      "id": 6,
+      "name": "Marka Lisans Sözleşmesi.pdf",
+      "type": "pdf",
+      "sizeMb": 1.6,
+      "uploadedAt": "2026-08-17T10:30:00+03:00",
+      "status": "signed"
+    },
+    {
+      "id": 7,
+      "name": "Tedarik Protokolü v3.pdf",
+      "type": "pdf",
+      "sizeMb": 2.1,
+      "uploadedAt": "2026-08-19T14:12:00+03:00",
+      "status": "cancelled"
+    },
+    {
+      "id": 8,
+      "name": "Gizlilik Taahhütnamesi.pdf",
+      "type": "pdf",
+      "sizeMb": 0.4,
+      "uploadedAt": "2026-08-21T09:30:00+03:00",
+      "status": "pending"
+    },
+    {
+      "id": 9,
+      "name": "Hizmet Bedeli Faturası-8842.pdf",
+      "type": "pdf",
+      "sizeMb": 0.8,
+      "uploadedAt": "2026-08-24T11:20:00+03:00",
+      "status": "archived"
+    },
+    {
+      "id": 10,
+      "name": "Kira Sözleşmesi 2026.pdf",
+      "type": "pdf",
+      "sizeMb": 1.2,
+      "uploadedAt": "2026-08-25T15:41:00+03:00",
+      "status": "signed"
+    }
+  ],
+  "timestampOperations": [
+    {
+      "id": 1,
+      "documentId": 3,
+      "status": "tamamlandı",
+      "creditCost": 1,
+      "createdAt": "2026-08-10T13:23:11+03:00"
+    },
+    {
+      "id": 2,
+      "documentId": 6,
+      "status": "tamamlandı",
+      "creditCost": 1,
+      "createdAt": "2026-08-17T10:31:02+03:00"
+    },
+    {
+      "id": 3,
+      "documentId": 10,
+      "status": "tamamlandı",
+      "creditCost": 1,
+      "createdAt": "2026-08-25T15:41:07+03:00"
+    }
+  ],
+  "auth": {
+    "currentPassword": "Deneme123!",
+    "passwordChangedAt": "2026-04-26",
+    "activeSessionCount": 2,
+    "lastLoginAt": "2026-08-25T09:12:00+03:00",
+    "lastLoginLocation": "İstanbul"
+  },
+  "otp": {
+    "correctCode": "444444",
+    "expirySeconds": 45
+  }
+}

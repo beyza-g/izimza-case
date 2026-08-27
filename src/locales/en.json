@@ -1,0 +1,259 @@
+{
+  "common": {
+    "actions": {
+      "save": "Save",
+      "cancel": "Cancel",
+      "delete": "Delete",
+      "discard": "Cancel",
+      "retry": "Retry",
+      "back": "Back",
+      "chooseFile": "Choose file",
+      "download": "Download",
+      "close": "Close"
+    },
+    "nav": {
+      "home": "Home",
+      "sign": "Sign",
+      "timestamp": "Timestamp",
+      "timestampShort": "Stamp",
+      "archive": "Archive",
+      "documents": "Document Management",
+      "account": "Account"
+    },
+    "status": {
+      "signed": "Signed",
+      "archived": "Archived",
+      "pending": "Pending",
+      "cancelled": "Cancelled"
+    },
+    "errors": {
+      "network": "Connection error. Check your internet connection and try again.",
+      "server": "A server error occurred. Please try again later.",
+      "generic": "Something went wrong, please try again."
+    },
+    "user": {
+      "role": "Legal Counsel"
+    },
+    "plan": {
+      "enterprise": "Enterprise"
+    },
+    "language": "Language",
+    "appearance": "Appearance",
+    "toggleAppearance": "Toggle appearance",
+    "profileSettings": "Profile & Settings",
+    "logout": "Log out",
+    "requiredField": "This field is required"
+  },
+  "dashboard": {
+    "greeting": "Hello, {name}",
+    "pendingSignatures": "You have {count} signature requests waiting in your archive.",
+    "stats": {
+      "totalSignatures": "Total signatures",
+      "archivedDocuments": "Archived documents",
+      "remainingCredits": "Remaining credits",
+      "archiveSpace": "Archive space",
+      "unitDocument": "docs",
+      "unitCount": "credits",
+      "noteThisMonth": "+{count} this month",
+      "noteLast30Days": "+{count} in the last 30 days",
+      "noteRenewal": "Renews {date}"
+    },
+    "accountLoadError": "Couldn't load account information.",
+    "upload": {
+      "title": "Sign now",
+      "description": "Drag your files here or choose from your computer · PDF, DOCX, XLSX, PNG · up to 50 MB"
+    },
+    "table": {
+      "title": "Recently archived documents",
+      "viewAll": "View all →",
+      "file": "File",
+      "date": "Date",
+      "status": "Status",
+      "actions": "Actions",
+      "empty": "No archived documents yet.",
+      "actionsFor": "Actions for {name}",
+      "emailSend": "Send by email"
+    },
+    "deleteDialog": {
+      "title": "Delete document",
+      "description": "\"{name}\" will be permanently deleted. This action cannot be undone.",
+      "confirm": "Yes, delete",
+      "deleting": "Deleting…"
+    },
+    "toasts": {
+      "downloaded": "\"{name}\" downloaded.",
+      "emailed": "\"{name}\" sent by email.",
+      "deleted": "Document deleted.",
+      "deleteFailed": "Couldn't delete the document, please try again."
+    }
+  },
+  "timestamp": {
+    "title": "Get a timestamp",
+    "subtitle": "Legally proves the content and time of a document.",
+    "documentsCount": "{count} docs",
+    "dropzone": {
+      "title": "Drop the document to timestamp",
+      "description": "Drag your file here or choose from your computer. You can select multiple files · PDF, DOCX, XLSX, PNG · up to 50 MB."
+    },
+    "queue": {
+      "title": "Document queue",
+      "processing": "In progress",
+      "clearAll": "Clear all",
+      "status": {
+        "queued": "Waiting",
+        "processing": "Timestamping",
+        "done": "Done",
+        "error": "Error"
+      },
+      "failedSuffix": "· failed",
+      "addMore": "Add another document"
+    },
+    "panel": {
+      "title": "Operation panel",
+      "idleBadge": "Waiting",
+      "idleDescription": "The operation summary and timestamp button will appear here once a document is uploaded.",
+      "balance": "Balance",
+      "credits": "{count} credits",
+      "processingBadge": "In progress",
+      "processingDescription": "Verification and result steps continue in the dialog.",
+      "summary": "Operation summary",
+      "insufficientTitle": "Insufficient credit balance",
+      "insufficientDescription": "{queued} documents in the queue need {cost} credits, but your balance is {remaining} credits.",
+      "upgrade": "Upgrade plan →",
+      "deductNotice": "{cost} credits will be deducted from your balance for this operation.",
+      "current": "Current",
+      "remaining": "Remaining",
+      "archiveCheckbox": "Archive automatically when complete",
+      "submit": "Get timestamp",
+      "submitting": "Sending…",
+      "helperText": "A verification code will be sent to your phone when you tap the button."
+    },
+    "mobileBar": {
+      "insufficient": "insufficient balance",
+      "summary": "{count} docs · {rest}"
+    },
+    "clearDialog": {
+      "title": "Clear queue",
+      "description": "{count} documents in the queue will be removed. This action cannot be undone.",
+      "confirm": "Yes, clear all"
+    },
+    "leaveDialog": {
+      "title": "You have unsaved documents",
+      "description": "The files you added haven't been saved yet and will be lost if you leave. Do you want to continue?",
+      "stay": "Stay on page",
+      "leave": "Leave"
+    },
+    "toasts": {
+      "duplicateOne": "\"{name}\" was already added.",
+      "duplicateMany": "{count} files were already in the queue and were not added.",
+      "cleared": "Queue cleared.",
+      "errorCount": "{count} documents failed to timestamp.",
+      "sent": "Document sent."
+    },
+    "fileError": "Timestamping failed.",
+    "otp": {
+      "title": "Verification",
+      "heading": "Enter the code sent to your phone",
+      "description": "Enter the 6-digit verification code sent to {phone}.",
+      "digitLabel": "Digit {n}",
+      "wrongCode": "Incorrect code, please try again.",
+      "remainingTime": "Time left {time}",
+      "resend": "Resend code",
+      "verify": "Verify",
+      "verifying": "Verifying…"
+    },
+    "otpExpired": {
+      "badge": "Expired",
+      "title": "Code expired",
+      "description": "Verification codes are valid for a limited time for security reasons. Let's send you a new one.",
+      "resend": "Resend"
+    },
+    "result": {
+      "title": "Result",
+      "successTitle": "{count} documents timestamped",
+      "creditsLeft": "{count} credits left",
+      "archived": "✓ Archived",
+      "partialTitle": "{done} documents timestamped, {failed} failed",
+      "failureTitle": "Timestamping failed",
+      "errorCount": "{count} documents failed to timestamp",
+      "retryAll": "Retry all",
+      "sentTo": "✓ Sent to {count} recipients",
+      "downloadCount": "Download ({count})",
+      "newDocument": "Timestamp a new document"
+    },
+    "send": {
+      "title": "Send by email",
+      "searchPlaceholder": "Search recipients…",
+      "self": "Myself",
+      "noRecipients": "You have no saved recipients —",
+      "addFromSettings": "Add from Settings →",
+      "noResults": "No results found.",
+      "addRecipient": "Recipient not in your saved list? Add one →",
+      "submit": "Send ({count})",
+      "submitting": "Sending…"
+    }
+  },
+  "profile": {
+    "mobileHeading": "Settings",
+    "mobileSubheading": "Account and preferences",
+    "pageTitle": "Settings · Profile & Security",
+    "settingsNav": {
+      "security": "Profile & Security",
+      "signature": "Signature Settings",
+      "billing": "Billing & Subscription",
+      "recipients": "Saved Recipients"
+    },
+    "personalInfo": {
+      "title": "Personal information",
+      "description": "Your email address is your account identity and cannot be changed."
+    },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "phone": "Phone number",
+      "email": "Email"
+    },
+    "saving": "Saving…",
+    "kvkkText": "By saving your profile information, you accept the KVKK Privacy Notice.",
+    "kvkkReadLink": "Read the notice",
+    "toasts": {
+      "saved": "Profile updated."
+    },
+    "accountMeta": "{email} · {plan} plan · member since {memberSince}",
+    "security": {
+      "title": "Security",
+      "password": "Password",
+      "passwordLastChanged": "Last changed {date}",
+      "changePassword": "Change password",
+      "sessions": "Sessions",
+      "sessionsInfo": "{deviceCount} active devices · last sign-in {lastLogin}, {location}",
+      "closeAllSessions": "Close all"
+    },
+    "badges": {
+      "nesVerified": "NES verified",
+      "nesTooltip": "Account verified with a Qualified Electronic Certificate",
+      "nesValidity": "Valid until {date}"
+    },
+    "errors": {
+      "invalidPhone": "Enter a valid phone number"
+    },
+    "password": {
+      "title": "Change password",
+      "description": "Sessions on other devices will be closed after the change.",
+      "current": "Current password",
+      "new": "New password",
+      "confirm": "Confirm new password",
+      "currentError": "Current password is incorrect",
+      "requirementsTitle": "Password requirements",
+      "changing": "Changing…",
+      "toastSuccess": "Password changed.",
+      "rules": {
+        "minLength": "At least 8 characters",
+        "upper": "At least 1 uppercase letter",
+        "lower": "At least 1 lowercase letter",
+        "digit": "At least 1 digit",
+        "match": "Passwords match"
+      }
+    }
+  }
+}
