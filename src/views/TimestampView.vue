@@ -21,7 +21,13 @@ import { useAccount } from '@/queries/useAccount'
 import { useProfile } from '@/queries/useProfile'
 import { useTimestampQueueStore, type QueueFile } from '@/stores/timestampQueue'
 import { useTimestampMutation } from '@/mutations/useTimestampMutation'
-import { createDocument, deleteDocument, archiveDocument, type RawDocType } from '@/api/documents'
+import {
+  createDocument,
+  deleteDocument,
+  archiveDocument,
+  sendMail,
+  type RawDocType,
+} from '@/api/documents'
 import TimestampCommitModal from '@/components/timestamp/TimestampCommitModal.vue'
 import {
   AlertDialog,
@@ -76,7 +82,7 @@ const submitting = ref(false)
 const archiveAfterCompletion = ref(true)
 const lastArchived = ref(false)
 const sentCount = ref(0)
-// Live, not snapshotted — a manual "Tümünü tekrar dene" after a partial
+// Live, not snapshotted — a manual "Retry all" after a partial
 // failure changes file statuses in place, and the result screen's outcome
 // (success/partial/failure) needs to track that instead of going stale.
 const completedCount = computed(() => queue.value.filter((f) => f.status === 'done').length)
@@ -123,6 +129,16 @@ const isModalStep = computed(
     flow.value === 'sent',
 )
 
+// Narrows Flow down to TimestampCommitModal's own step prop type. Kept as a
+// computed (never inlined as `flow as '...' | '...'` in the template) since
+// vue-eslint-parser's template-expression parser misreads a bare union-typed
+// `as` cast containing `|` characters as Vue 2's deprecated `{{ x | filter }}`
+// syntax — wrapping parens around the inline cast used to work around it, but
+// something (editor auto-format, most likely) kept stripping them back out
+// across sessions. A computed sidesteps the ambiguity for good: no `as`/`|`
+// ever appears inside a template expression.
+const modalStep = computed(() => flow.value as 'otp' | 'otp-expired' | 'result' | 'send' | 'sent')
+
 function formatBytes(bytes: number) {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
   return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`
@@ -136,7 +152,7 @@ let nextLocalId = 1
 
 // Purely local: picking a file no longer touches the server at all — nothing
 // is created until commitFile() actually verifies the OTP and commits it, so
-// there's no server-side "bekliyor" document for a merely-selected file to
+// there's no server-side "pending" document for a merely-selected file to
 // leave behind (the ghost-document bug this replaces).
 function onFilesChosen(event: Event) {
   const input = event.target as HTMLInputElement
@@ -256,7 +272,7 @@ function resendOtp() {
   nextTick(() => commitModalRef.value?.focusFirst())
 }
 
-// The single reset/dismiss path shared by "Yeni belge damgala", "Vazgeç",
+// The single reset/dismiss path shared by "Timestamp a new document", "Cancel",
 // a file card's ×, and the modal's own backdrop-click/Escape/close button —
 // each just mutates the queue first (revert in-flight files, or remove one),
 // then calls this to recompute the one true next state. If the commit
@@ -433,14 +449,21 @@ async function sendToRecipients() {
   if (submitting.value || recipientCount.value === 0) return
   submitting.value = true
   try {
-    await simulateRequest(true, { delay: 400 })
+    const recipientEmails = recipients.value.filter((r) => r.selected).map((r) => r.mail)
+    if (selfSelected.value) recipientEmails.push(currentUserEmail.value)
+    const doneIds = queue.value.filter((f) => f.status === 'done').map((f) => f.documentId!)
+    await Promise.all(
+      doneIds.map((documentId) =>
+        sendMail({ documentId, recipients: recipientEmails }, { skipErrorToast: true }),
+      ),
+    )
     sentCount.value = recipientCount.value
     pushToast(t('timestamp.toasts.sent'), { tone: 'success' })
     // No auto-reset and no auto-navigation: the modal stays on 'sent' and the
     // user stays on this page until they explicitly start a new batch.
     flow.value = 'sent'
-  } catch (error) {
-    if (error instanceof MockNetworkError) pushToast(error.message, { retry: sendToRecipients })
+  } catch {
+    pushToast(t('common.errors.generic'), { retry: sendToRecipients })
   } finally {
     submitting.value = false
   }
@@ -615,7 +638,7 @@ onBeforeUnmount(() => {
 
               <!-- Single retry surface: this file's own row is the only place
                    its retry action lives (the modal's error banner is a bulk
-                   "Tümünü tekrar dene" action, never a per-file duplicate). -->
+                   "Retry All" action, never a per-file duplicate). -->
               <span
                 class="text-xs font-medium px-2.5 py-1 rounded-full flex-none"
                 :class="{
@@ -851,7 +874,7 @@ onBeforeUnmount(() => {
       :open="isModalStep"
       v-model:otp="otp"
       v-model:recipient-search="recipientSearch"
-      :step="flow as 'otp' | 'otp-expired' | 'result' | 'send' | 'sent'"
+      :step="modalStep"
       :otp-error="otpError"
       :otp-complete="otpComplete"
       :submitting="submitting"

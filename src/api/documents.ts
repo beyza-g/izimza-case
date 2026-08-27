@@ -63,3 +63,20 @@ export async function deleteDocument(
 export async function archiveDocument(id: number): Promise<void> {
   await http.patch(`/documents/${id}`, { status: 'archived' }, { skipErrorToast: true })
 }
+
+export interface SendMailInput {
+  documentId: number
+  recipients: string[]
+}
+
+export async function sendMail(
+  input: SendMailInput,
+  options?: { skipErrorToast?: boolean },
+): Promise<{ id: number }> {
+  const response = await http.post<{ id: number }>(
+    '/mailLog',
+    { ...input, sentAt: new Date().toISOString() },
+    { skipErrorToast: options?.skipErrorToast },
+  )
+  return response.data
+}
