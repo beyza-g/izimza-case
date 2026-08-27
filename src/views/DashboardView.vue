@@ -25,14 +25,13 @@ import {
 } from '@/components/ui/alert-dialog'
 import { useAccount } from '@/queries/useAccount'
 import { useDocuments } from '@/queries/useDocuments'
-import { deleteDocument, type Document } from '@/api/documents'
+import { deleteDocument, sendMail, type Document } from '@/api/documents'
 import { downloadTextFile } from '@/lib/download'
-import { simulateRequest, MockNetworkError } from '@/lib/mockApi'
 import { formatDate } from '@/lib/formatDate'
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
 
-// Single source of truth for the "Son arşivlenen belgeler" table's column
+// Single source of truth for the Recently Archived Documents table's column
 // widths — header, loading skeleton, and data rows all bind to this so they
 // can't drift out of sync with each other.
 //
@@ -50,9 +49,14 @@ const accountQuery = useAccount()
 const documentsQuery = useDocuments()
 const queryClient = useQueryClient()
 const { pushToast } = useToast()
-const { firstName } = useCurrentUser()
+const { firstName, email } = useCurrentUser()
 
-const recentDocuments = computed(() => documentsQuery.data.value?.slice(0, 4) ?? [])
+// "Son arşivlenen belgeler" means exactly that — filtered to archived
+// status, not every document regardless of state (the real portal.izimza.com
+// has this exact inconsistency; deliberately not repeating it here).
+const recentDocuments = computed(
+  () => documentsQuery.data.value?.filter((doc) => doc.status === 'archived').slice(0, 4) ?? [],
+)
 const pendingCount = computed(
   () => documentsQuery.data.value?.filter((doc) => doc.status === 'pending').length ?? 0,
 )
@@ -77,7 +81,7 @@ function downloadDocument(doc: Document) {
   // bytes, so what's downloadable is a receipt of the archived state, not a
   // copy of the original document.
   const content = [
-    'İzİmza — Arşiv Kaydı',
+    'İzİmza — Archive Record',
     '',
     `Belge: ${doc.name}`,
     `Boyut: ${doc.sizeMb} MB`,
@@ -91,12 +95,10 @@ function downloadDocument(doc: Document) {
 
 async function emailDocument(doc: Document) {
   try {
-    await simulateRequest(true, { delay: 500 })
+    await sendMail({ documentId: doc.id, recipients: [email.value] }, { skipErrorToast: true })
     pushToast(t('dashboard.toasts.emailed', { name: doc.name }), { tone: 'success' })
-  } catch (error) {
-    if (error instanceof MockNetworkError) {
-      pushToast(error.message, { retry: () => emailDocument(doc) })
-    }
+  } catch {
+    pushToast(t('common.errors.generic'), { retry: () => emailDocument(doc) })
   }
 }
 
@@ -167,13 +169,21 @@ function confirmDelete() {
           :label="t('dashboard.stats.totalSignatures')"
           :value="String(accountQuery.data.value.totalSignatures)"
           :unit="t('dashboard.stats.unitDocument')"
-          :note="t('dashboard.stats.noteThisMonth', { count: accountQuery.data.value.signaturesThisMonth })"
+          :note="
+            t('dashboard.stats.noteThisMonth', {
+              count: accountQuery.data.value.signaturesThisMonth,
+            })
+          "
         />
         <StatCard
           :label="t('dashboard.stats.archivedDocuments')"
           :value="String(accountQuery.data.value.archivedDocuments)"
           :unit="t('dashboard.stats.unitDocument')"
-          :note="t('dashboard.stats.noteLast30Days', { count: accountQuery.data.value.archivedLast30Days })"
+          :note="
+            t('dashboard.stats.noteLast30Days', {
+              count: accountQuery.data.value.archivedLast30Days,
+            })
+          "
         />
         <StatCard
           :label="t('dashboard.stats.remainingCredits')"
@@ -238,7 +248,8 @@ function confirmDelete() {
           DOC_TABLE_COLS,
         ]"
       >
-        <span>{{ t('dashboard.table.file') }}</span><span>{{ t('dashboard.table.date') }}</span
+        <span>{{ t('dashboard.table.file') }}</span
+        ><span>{{ t('dashboard.table.date') }}</span
         ><span>{{ t('dashboard.table.status') }}</span
         ><span class="sr-only">{{ t('dashboard.table.actions') }}</span>
       </div>
@@ -336,9 +347,13 @@ function confirmDelete() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel :disabled="deleting">{{ t('common.actions.discard') }}</AlertDialogCancel>
+          <AlertDialogCancel :disabled="deleting">{{
+            t('common.actions.discard')
+          }}</AlertDialogCancel>
           <AlertDialogAction variant="destructive" :disabled="deleting" @click="confirmDelete">
-            {{ deleting ? t('dashboard.deleteDialog.deleting') : t('dashboard.deleteDialog.confirm') }}
+            {{
+              deleting ? t('dashboard.deleteDialog.deleting') : t('dashboard.deleteDialog.confirm')
+            }}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

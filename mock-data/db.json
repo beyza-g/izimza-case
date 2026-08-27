@@ -97,6 +97,30 @@
       "sizeMb": 1.2,
       "uploadedAt": "2026-08-25T15:41:00+03:00",
       "status": "signed"
+    },
+    {
+      "id": 11,
+      "name": "Fatura Mutabakat Tutanağı.pdf",
+      "type": "pdf",
+      "sizeMb": 0.6,
+      "uploadedAt": "2026-08-27T10:15:00+03:00",
+      "status": "archived"
+    },
+    {
+      "id": 12,
+      "name": "Depo Kira Sözleşmesi.pdf",
+      "type": "pdf",
+      "sizeMb": 1.8,
+      "uploadedAt": "2026-08-20T13:40:00+03:00",
+      "status": "archived"
+    },
+    {
+      "id": 13,
+      "name": "Sigorta Poliçesi 2026.pdf",
+      "type": "pdf",
+      "sizeMb": 0.7,
+      "uploadedAt": "2026-08-03T11:05:00+03:00",
+      "status": "archived"
     }
   ],
   "timestampOperations": [
@@ -132,5 +156,6 @@
   "otp": {
     "correctCode": "444444",
     "expirySeconds": 45
-  }
+  },
+  "mailLog": []
 }
