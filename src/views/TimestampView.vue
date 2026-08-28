@@ -670,7 +670,7 @@ onBeforeUnmount(() => {
             >
               <span
                 class="w-10 h-10 flex-none rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center font-mono text-[10px] font-medium"
-                >PDF</span
+                >{{ inferDocType(file.name).toUpperCase() }}</span
               >
               <div class="flex-1 min-w-0">
                 <p class="text-sm font-medium m-0 truncate" :title="file.name">{{ file.name }}</p>
