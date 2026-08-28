@@ -28,17 +28,10 @@ import { useDropzone, hasAcceptedExtension } from '@/composables/useDropzone'
 import { pendingUploadFiles } from '@/composables/usePendingUpload'
 import DocumentCertificatePanel from '@/components/dashboard/DocumentCertificatePanel.vue'
 
-// Single source of truth for the Recently Archived Documents table's column
-// widths — header, loading skeleton, and data rows all bind to this so they
-// can't drift out of sync with each other.
-//
-// The last column is a fixed 40px, not `auto`: an `auto` track is sized from
-// that specific grid instance's own content, and the header's cell (a
-// near-zero-width sr-only span) vs. a row's cell (a real ~32px button) would
-// each compute a *different* auto-width — which then shifts how much space
-// is left for the fr-based columns before it, breaking alignment even though
-// every row shares this exact same template string.
-const DOC_TABLE_COLS = 'grid-cols-[1fr_auto_40px] md:grid-cols-[2.2fr_1fr_1fr_40px]'
+// Single source of truth for table grid widths (header, skeleton, rows) to prevent layout drift.
+// Fixed 140px operation column prevents badge clipping during sidebar expansion at md→lg.
+// Fixed action column (112px md+ / 40px mobile) avoids `auto` track alignment bugs and button overflow.
+const DOC_TABLE_COLS = 'grid-cols-[1fr_auto_40px] md:grid-cols-[2.2fr_1fr_140px_112px]'
 
 const { t } = useI18n({ useScope: 'global' })
 const router = useRouter()
