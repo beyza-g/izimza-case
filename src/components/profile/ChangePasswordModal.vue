@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { Check, Info, X } from 'lucide-vue-next'
+import { Check, Eye, EyeOff, Info, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
@@ -57,6 +57,10 @@ const [confirm] = defineField('confirm')
 const currentPasswordError = ref('')
 const submitting = ref(false)
 const currentPasswordInput = ref<HTMLInputElement | null>(null)
+
+const showCurrent = ref(false)
+const showNext = ref(false)
+const showConfirm = ref(false)
 const { pushToast } = useToast()
 const securityQuery = useSecurity()
 const queryClient = useQueryClient()
@@ -68,6 +72,9 @@ const queryClient = useQueryClient()
 function onOpenAutoFocus(event: Event) {
   event.preventDefault()
   currentPasswordInput.value?.focus()
+}
+function onPointerDownOutside(event: Event) {
+  event.preventDefault()
 }
 
 const rules = computed(() => getPasswordRules(values.next, values.confirm, t))
@@ -110,6 +117,7 @@ function onOpenChange(value: boolean) {
     <DialogContent
       class="max-w-[440px] bg-card p-7 flex flex-col gap-4"
       @open-auto-focus="onOpenAutoFocus"
+      @pointer-down-outside="onPointerDownOutside"
     >
       <DialogTitle as-child>
         <VisuallyHidden>{{ t('profile.password.title') }}</VisuallyHidden>
@@ -153,18 +161,34 @@ function onOpenChange(value: boolean) {
           <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{
             t('profile.password.current')
           }}</label>
-          <input
-            ref="currentPasswordInput"
-            v-model="current"
-            type="password"
-            class="w-full bg-transparent border rounded-[10px] px-3.5 py-3 text-sm"
-            :class="
-              currentPasswordError
-                ? 'border-destructive focus:border-destructive'
-                : 'border-input focus:border-primary'
-            "
-            @input="onCurrentInput"
-          />
+          <div class="relative">
+            <input
+              ref="currentPasswordInput"
+              v-model="current"
+              :type="showCurrent ? 'text' : 'password'"
+              autocomplete="current-password"
+              class="w-full bg-transparent border rounded-[10px] px-3.5 py-3 pr-10 text-sm"
+              :class="
+                currentPasswordError
+                  ? 'border-destructive focus:border-destructive'
+                  : 'border-input focus:border-primary'
+              "
+              @input="onCurrentInput"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              :aria-label="
+                showCurrent
+                  ? t('profile.password.hidePassword')
+                  : t('profile.password.showPassword')
+              "
+              @click="showCurrent = !showCurrent"
+            >
+              <EyeOff v-if="showCurrent" class="w-4 h-4" />
+              <Eye v-else class="w-4 h-4" />
+            </button>
+          </div>
           <p v-if="currentPasswordError" class="text-xs text-destructive mt-1.5 m-0">
             {{ currentPasswordError }}
           </p>
@@ -173,21 +197,51 @@ function onOpenChange(value: boolean) {
           <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{
             t('profile.password.new')
           }}</label>
-          <input
-            v-model="next"
-            type="password"
-            class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
-          />
+          <div class="relative">
+            <input
+              v-model="next"
+              :type="showNext ? 'text' : 'password'"
+              autocomplete="new-password"
+              class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 pr-10 text-sm focus:border-primary"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              :aria-label="
+                showNext ? t('profile.password.hidePassword') : t('profile.password.showPassword')
+              "
+              @click="showNext = !showNext"
+            >
+              <EyeOff v-if="showNext" class="w-4 h-4" />
+              <Eye v-else class="w-4 h-4" />
+            </button>
+          </div>
         </div>
         <div>
           <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{
             t('profile.password.confirm')
           }}</label>
-          <input
-            v-model="confirm"
-            type="password"
-            class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
-          />
+          <div class="relative">
+            <input
+              v-model="confirm"
+              :type="showConfirm ? 'text' : 'password'"
+              autocomplete="new-password"
+              class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 pr-10 text-sm focus:border-primary"
+            />
+            <button
+              type="button"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              :aria-label="
+                showConfirm
+                  ? t('profile.password.hidePassword')
+                  : t('profile.password.showPassword')
+              "
+              @click="showConfirm = !showConfirm"
+            >
+              <EyeOff v-if="showConfirm" class="w-4 h-4" />
+              <Eye v-else class="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
