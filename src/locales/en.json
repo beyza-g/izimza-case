@@ -237,7 +237,8 @@
     "kvkkText": "By saving your profile information, you accept the KVKK Privacy Notice.",
     "kvkkReadLink": "Read the notice",
     "toasts": {
-      "saved": "Profile updated."
+      "saved": "Profile updated.",
+      "sessionsClosed": "All sessions closed."
     },
     "accountMeta": "{email} · {plan} plan · member since {memberSince}",
     "security": {
@@ -247,7 +248,8 @@
       "changePassword": "Change password",
       "sessions": "Sessions",
       "sessionsInfo": "{deviceCount} active devices · last sign-in {lastLogin}, {location}",
-      "closeAllSessions": "Close all"
+      "closeAllSessions": "Close all",
+      "closingAllSessions": "Closing…"
     },
     "badges": {
       "nesVerified": "NES verified",

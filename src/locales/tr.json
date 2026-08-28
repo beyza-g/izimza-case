@@ -237,7 +237,8 @@
     "kvkkText": "Profil bilgilerinizi kaydettiğinizde KVKK Aydınlatma Metni'ni kabul etmiş olursunuz.",
     "kvkkReadLink": "Metni oku",
     "toasts": {
-      "saved": "Profil güncellendi."
+      "saved": "Profil güncellendi.",
+      "sessionsClosed": "Tüm oturumlar kapatıldı."
     },
     "accountMeta": "{email} · {plan} plan · üyelik {memberSince}",
     "security": {
@@ -247,7 +248,8 @@
       "changePassword": "Şifre değiştir",
       "sessions": "Oturumlar",
       "sessionsInfo": "{deviceCount} aktif cihaz · son giriş {lastLogin}, {location}",
-      "closeAllSessions": "Tümünü kapat"
+      "closeAllSessions": "Tümünü kapat",
+      "closingAllSessions": "Kapatılıyor…"
     },
     "badges": {
       "nesVerified": "NES doğrulandı",
@@ -267,6 +269,7 @@
       "requirementsTitle": "Şifre gereksinimleri",
       "changing": "Değiştiriliyor…",
       "toastSuccess": "Şifre değiştirildi.",
+      "demoNotice": "Bu demo ortamında şifre değiştirme gerçek bir isteğe bağlıdır; test hesabının erişimini korumak için sunucu tarafında ayrıca ele alınır.",
       "rules": {
         "minLength": "En az 8 karakter",
         "upper": "En az 1 büyük harf",
