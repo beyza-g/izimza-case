@@ -60,15 +60,19 @@ npm run type-check   # vue-tsc --build
 ## Pages / Routes
 
 | Route        | Page                                   | Content                                                                                                               |
-| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| ------------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `/dashboard` | Anasayfa (Home)                        | Stat cards, upload zone, recently archived documents table                                                            |
 | `/timestamp` | Zaman Damgala (Timestamp)              | File upload → OTP verification → timestamping result, driven by a single state machine (`idle→ready→otp→result→send`) |
 | `/profile`   | Ayarlar · Profil & Güvenlik (Settings) | Profile form (Zod-validated), change-password modal, session management                                               |
-| `/callback`  | —                                       | Auth0 PKCE redirect callback; never seen by the user, only used to complete login                                     |
+| `/callback`  | —                                      | Auth0 PKCE redirect callback; never seen by the user, only used to complete login                                     |
 
 Every route except `/callback` is marked `meta.requiresAuth: true` and
 protected in `router.beforeEach` via `@auth0/auth0-vue`'s `authGuard`
 (`src/router/index.ts`).
+
+## Component documentation
+
+Component documentation lives in [COMPONENTS.md](./COMPONENTS.md). Reusable UI atoms and primitives are documented. To keep the toolchain minimal and dependency-free, component guidelines, props, and usage examples are maintained directly in Markdown.
 
 ## Recommended IDE Setup
 
@@ -103,17 +107,17 @@ re-explain decisions that already have a dedicated row there.
 
 ### Data layer & mock backend
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 1 | Redundant network requests on every navigation | TanStack Query `staleTime`/cache instead of refetch-on-mount |
-| 2 | REST-incorrect endpoints (POST used where GET/resource semantics apply) | Resource-oriented `json-server` API design |
-| 3 | Response-unwrapping logic duplicated ad hoc across call sites | Centralized once in the axios interceptor (`unwrapResponse`) |
-| 4 | An in-memory mock adapter never exercised real HTTP timing or the interceptor's 4xx/5xx branches | Real `json-server` HTTP process, pinned to `^0.17.4` for its `--watch`/`--middlewares` flags |
-| 5 | Credit balance lived in two places (`wallet.ts` Pinia store + the account query) — dual source of truth | Removed `wallet.ts`; `useAccount()` (TanStack Query cache) is the single source |
-| 6 | Concurrent retry mutations (`retryAllErrors()`) could clobber each other's optimistic credit deduction | Rewritten from concurrent `.forEach` to sequential `for...of` + `await` |
-| 7 | Vite's watcher picked up every write `json-server` made to `db.json`, wiping in-progress Timestamp state via HMR | Moved mock files to root-level `mock-data/`, added `server.watch.ignored` in `vite.config.ts` |
-| 8 | Random mock failures (`failRate`) made the demo non-deterministic; TanStack retry raced axios's retry-toast | `failRate` zeroed; `retry: false` added to every query |
-| 9 | The real app splits its API across inconsistent per-feature subdomains | One base URL, flat and consistently-cased resource naming |
+| #   | Problem                                                                                                          | Solution                                                                                      |
+| --- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | Redundant network requests on every navigation                                                                   | TanStack Query `staleTime`/cache instead of refetch-on-mount                                  |
+| 2   | REST-incorrect endpoints (POST used where GET/resource semantics apply)                                          | Resource-oriented `json-server` API design                                                    |
+| 3   | Response-unwrapping logic duplicated ad hoc across call sites                                                    | Centralized once in the axios interceptor (`unwrapResponse`)                                  |
+| 4   | An in-memory mock adapter never exercised real HTTP timing or the interceptor's 4xx/5xx branches                 | Real `json-server` HTTP process, pinned to `^0.17.4` for its `--watch`/`--middlewares` flags  |
+| 5   | Credit balance lived in two places (`wallet.ts` Pinia store + the account query) — dual source of truth          | Removed `wallet.ts`; `useAccount()` (TanStack Query cache) is the single source               |
+| 6   | Concurrent retry mutations (`retryAllErrors()`) could clobber each other's optimistic credit deduction           | Rewritten from concurrent `.forEach` to sequential `for...of` + `await`                       |
+| 7   | Vite's watcher picked up every write `json-server` made to `db.json`, wiping in-progress Timestamp state via HMR | Moved mock files to root-level `mock-data/`, added `server.watch.ignored` in `vite.config.ts` |
+| 8   | Random mock failures (`failRate`) made the demo non-deterministic; TanStack retry raced axios's retry-toast      | `failRate` zeroed; `retry: false` added to every query                                        |
+| 9   | The real app splits its API across inconsistent per-feature subdomains                                           | One base URL, flat and consistently-cased resource naming                                     |
 
 See UX_DECISIONS.md → Architecture for the full reasoning behind #1, #3, #5
 (staleTime/retry strategy, the axios interceptor layer, and the
@@ -139,10 +143,10 @@ single-source-of-truth call), which aren't re-explained here.
 
 ### Auth
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 10 | Hand-rolling login/session/token-refresh is out of scope for a UI/UX case and risks reinventing security-critical code | `@auth0/auth0-vue` (Authorization Code + PKCE) |
-| 11 | Memory-only Auth0 token cache forced a fresh login on every navigation (third-party cookie restrictions break silent renewal) | `cacheLocation: 'localstorage'` for this demo; noted as a prod tradeoff |
+| #   | Problem                                                                                                                       | Solution                                                                |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 10  | Hand-rolling login/session/token-refresh is out of scope for a UI/UX case and risks reinventing security-critical code        | `@auth0/auth0-vue` (Authorization Code + PKCE)                          |
+| 11  | Memory-only Auth0 token cache forced a fresh login on every navigation (third-party cookie restrictions break silent renewal) | `cacheLocation: 'localstorage'` for this demo; noted as a prod tradeoff |
 
 - **Auth0 SPA SDK instead of a hand-rolled auth**: the case is evaluated on
   UI/UX and architecture quality, not on reimplementing password storage or
@@ -158,18 +162,18 @@ single-source-of-truth call), which aren't re-explained here.
 
 ### Forms & validation
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 12 | `vee-validate`/`zod` were dependencies but unused — Profile and the password modal used hand-rolled reactive validation | Wired real Zod schemas (`toTypedSchema` + `useForm`/`defineField`) into both forms |
+| #   | Problem                                                                                                                 | Solution                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 12  | `vee-validate`/`zod` were dependencies but unused — Profile and the password modal used hand-rolled reactive validation | Wired real Zod schemas (`toTypedSchema` + `useForm`/`defineField`) into both forms |
 
 Found and fixed during this project's own mandatory-requirements audit.
 
 ### Timestamp flow
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 13 | Neither the upload loop nor the OTP `verify()` commit loop could be cancelled; a stray `setTimeout` wasn't cleared on unmount either | `AbortController` threaded through both loops into `useTimestampMutation`'s `mutationFn` |
-| 14 | A new file upload could silently mix into an in-flight OTP verification batch, producing an inconsistent queue/credit state | New uploads blocked in the upload handlers themselves until the round completes or is abandoned |
+| #   | Problem                                                                                                                              | Solution                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| 13  | Neither the upload loop nor the OTP `verify()` commit loop could be cancelled; a stray `setTimeout` wasn't cleared on unmount either | `AbortController` threaded through both loops into `useTimestampMutation`'s `mutationFn`        |
+| 14  | A new file upload could silently mix into an in-flight OTP verification batch, producing an inconsistent queue/credit state          | New uploads blocked in the upload handlers themselves until the round completes or is abandoned |
 
 See UX_DECISIONS.md → Architecture for #13's full reasoning and its scope —
 it only covers this one flow, not every request in the app.
@@ -181,11 +185,11 @@ it only covers this one flow, not every request in the app.
 
 ### Document preview & certificates
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 15 | Dashboard's "Sign now" card promised drag-and-drop with no processing pipeline of its own (Sign isn't implemented) | Dropped/selected files routed into the working Timestamp queue instead (`useDropzone.ts`) |
-| 16 | No way to check a queued file is the right one before spending a credit on it | `FilePreviewSheet.vue` renders the file's own `File` object natively for PDF/PNG |
-| 17 | A literal preview for Dashboard/Archive's historical documents would show fake content — no real bytes are stored for them | `DocumentCertificatePanel.vue` — a genuine-metadata certificate plus a downloadable text receipt |
+| #   | Problem                                                                                                                    | Solution                                                                                         |
+| --- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| 15  | Dashboard's "Sign now" card promised drag-and-drop with no processing pipeline of its own (Sign isn't implemented)         | Dropped/selected files routed into the working Timestamp queue instead (`useDropzone.ts`)        |
+| 16  | No way to check a queued file is the right one before spending a credit on it                                              | `FilePreviewSheet.vue` renders the file's own `File` object natively for PDF/PNG                 |
+| 17  | A literal preview for Dashboard/Archive's historical documents would show fake content — no real bytes are stored for them | `DocumentCertificatePanel.vue` — a genuine-metadata certificate plus a downloadable text receipt |
 
 - **Dashboard's "Sign now" card hands off to Timestamp, not a Sign flow**:
   rather than a dead-end drop, the file is handed off (`usePendingUpload.ts`)
@@ -205,11 +209,11 @@ it only covers this one flow, not every request in the app.
 
 ### Accessibility
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 18 | The sidebar's user-card popover had click-outside/close-on-scroll but no Escape-to-close | Added a document-level `keydown` listener closing it on `Escape` |
-| 19 | The 6 OTP digit inputs had no `aria-label`, so screen readers announced nothing per digit | Added `aria-label="{n}. hane"` per input |
-| 20 | Toast notifications had no live region, so screen reader users weren't informed when one appeared | Added `role="status"` + `aria-live="polite"` to the toast container |
+| #   | Problem                                                                                           | Solution                                                            |
+| --- | ------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 18  | The sidebar's user-card popover had click-outside/close-on-scroll but no Escape-to-close          | Added a document-level `keydown` listener closing it on `Escape`    |
+| 19  | The 6 OTP digit inputs had no `aria-label`, so screen readers announced nothing per digit         | Added `aria-label="{n}. hane"` per input                            |
+| 20  | Toast notifications had no live region, so screen reader users weren't informed when one appeared | Added `role="status"` + `aria-live="polite"` to the toast container |
 
 Audited and partially remediated, not a full WCAG pass — full reasoning per
 row is in UX_DECISIONS.md → Accessibility. **Known, scoped gap**: neither
@@ -219,9 +223,9 @@ them.
 
 ### Internationalization
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 21 | All UI copy was hardcoded Turkish, with no path to a second language | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, locale persisted to `localStorage` |
+| #   | Problem                                                              | Solution                                                                                              |
+| --- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| 21  | All UI copy was hardcoded Turkish, with no path to a second language | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, locale persisted to `localStorage` |
 
 URL-based locale prefixing (`/en`, `/tr`) was deliberately skipped — no
 SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
@@ -229,13 +233,13 @@ SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
 
 ### shadcn-vue migration
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 22 | The stated stack was never actually run through `shadcn-vue init` — hand-authored `src/components/ui/*.vue` diverged from the intended library | Installed `shadcn-vue`, scoped to the dropdown-menu/alert-dialog components the archived-documents menu needed |
-| 23 | shadcn-vue's CLI (2.8.x) generates Tailwind v4-only syntax, silently producing zero working CSS under this project's v3 | Every generated component hand-ported to v3 syntax; `tw-animate-css` swapped for the real v3 plugin `tailwindcss-animate` |
-| 24 | The CLI's icon-library flag installed a second, scoped `@lucide/vue` package alongside the existing `lucide-vue-next` | Deleted the two generated files that needed it, uninstalled `@lucide/vue` |
-| 25 | Generated `Button.vue`/`buttonVariants` had its own radius/padding scale, diverging from every hand-built button in the app | Deleted the generated Button; restyled `AlertDialogAction`/`AlertDialogCancel` with the app's own button vocabulary |
-| 26 | A pre-existing `oxlint`/`eslint-plugin-oxlint` peer-dependency conflict made every `shadcn-vue add` (and plain `npm install`) fail outright | Added `.npmrc` with `legacy-peer-deps=true` |
+| #   | Problem                                                                                                                                        | Solution                                                                                                                  |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| 22  | The stated stack was never actually run through `shadcn-vue init` — hand-authored `src/components/ui/*.vue` diverged from the intended library | Installed `shadcn-vue`, scoped to the dropdown-menu/alert-dialog components the archived-documents menu needed            |
+| 23  | shadcn-vue's CLI (2.8.x) generates Tailwind v4-only syntax, silently producing zero working CSS under this project's v3                        | Every generated component hand-ported to v3 syntax; `tw-animate-css` swapped for the real v3 plugin `tailwindcss-animate` |
+| 24  | The CLI's icon-library flag installed a second, scoped `@lucide/vue` package alongside the existing `lucide-vue-next`                          | Deleted the two generated files that needed it, uninstalled `@lucide/vue`                                                 |
+| 25  | Generated `Button.vue`/`buttonVariants` had its own radius/padding scale, diverging from every hand-built button in the app                    | Deleted the generated Button; restyled `AlertDialogAction`/`AlertDialogCancel` with the app's own button vocabulary       |
+| 26  | A pre-existing `oxlint`/`eslint-plugin-oxlint` peer-dependency conflict made every `shadcn-vue add` (and plain `npm install`) fail outright    | Added `.npmrc` with `legacy-peer-deps=true`                                                                               |
 
 - **Installed later, for the row-actions menu, not from day one**: the
   design tokens were already authored in shadcn's own semantic naming
@@ -264,28 +268,28 @@ SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
 
 ### Feedback & loading
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 27 | Content pops in abruptly after loading, shifting the layout underneath it | `SkeletonBlock.vue` — a shimmer-animated placeholder sized to its eventual content |
-| 28 | `Skeleton.vue` violated the `vue/multi-word-component-names` lint rule | Renamed to `SkeletonBlock.vue` |
+| #   | Problem                                                                   | Solution                                                                           |
+| --- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 27  | Content pops in abruptly after loading, shifting the layout underneath it | `SkeletonBlock.vue` — a shimmer-animated placeholder sized to its eventual content |
+| 28  | `Skeleton.vue` violated the `vue/multi-word-component-names` lint rule    | Renamed to `SkeletonBlock.vue`                                                     |
 
 ### Housekeeping
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 29 | Console logging left in production | Stripped from the production build |
-| 30 | A debug "Hata simüle et" trigger could plausibly leak into a production build | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check |
-| 31 | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused | Deleted — confirmed zero imports anywhere |
+| #   | Problem                                                                       | Solution                                                                                                    |
+| --- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| 29  | Console logging left in production                                            | Stripped from the production build                                                                          |
+| 30  | A debug "Hata simüle et" trigger could plausibly leak into a production build | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check |
+| 31  | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused   | Deleted — confirmed zero imports anywhere                                                                   |
 
 ### Code quality & duplication cleanup
 
-| # | Problem | Solution |
-| --- | --- | --- |
-| 32 | `formatBytes`/`inferDocType` (`TimestampView.vue`), the archive-usage % calc (`DashboardView.vue`), and orphaned-error cleanup (`TimestampView.vue`) were pure logic buried inline in view components | Extracted to `src/lib/`: `file.ts`, `archiveStats.ts`, `orphanedDocuments.ts` |
-| 33 | The password-rule regexes were duplicated verbatim between the Zod schema and the live checklist in `ChangePasswordModal.vue` | Both now import the same regexes/`getPasswordRules()` from `src/lib/passwordRules.ts` |
-| 34 | Countdown-timer, OTP-digit-input, and recipient-selection logic were hand-rolled inline in `TimestampView.vue`/`CommitModalContent.vue`, and the phone-input caret-preservation logic inline in `ProfileView.vue` | Extracted to composables: `useCountdown`, `useOtpDigitInput`, `useRecipientSelection`, `usePhoneInputMask` |
-| 35 | Dashboard's `downloadDocument()` and Timestamp's `downloadResults()` built near-identical receipt text independently | Shared `buildArchiveReceipt()`/`buildTimestampReceipt()` in `src/lib/receipt.ts` |
-| 36 | Dashboard's delete confirmation, Timestamp's clear-queue confirmation, and Timestamp's leave-page confirmation each hand-rolled the same `AlertDialog` markup | `ConfirmDialog.vue` — a shared wrapper over the AlertDialog primitives, used by all three |
+| #   | Problem                                                                                                                                                                                                           | Solution                                                                                                   |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 32  | `formatBytes`/`inferDocType` (`TimestampView.vue`), the archive-usage % calc (`DashboardView.vue`), and orphaned-error cleanup (`TimestampView.vue`) were pure logic buried inline in view components             | Extracted to `src/lib/`: `file.ts`, `archiveStats.ts`, `orphanedDocuments.ts`                              |
+| 33  | The password-rule regexes were duplicated verbatim between the Zod schema and the live checklist in `ChangePasswordModal.vue`                                                                                     | Both now import the same regexes/`getPasswordRules()` from `src/lib/passwordRules.ts`                      |
+| 34  | Countdown-timer, OTP-digit-input, and recipient-selection logic were hand-rolled inline in `TimestampView.vue`/`CommitModalContent.vue`, and the phone-input caret-preservation logic inline in `ProfileView.vue` | Extracted to composables: `useCountdown`, `useOtpDigitInput`, `useRecipientSelection`, `usePhoneInputMask` |
+| 35  | Dashboard's `downloadDocument()` and Timestamp's `downloadResults()` built near-identical receipt text independently                                                                                              | Shared `buildArchiveReceipt()`/`buildTimestampReceipt()` in `src/lib/receipt.ts`                           |
+| 36  | Dashboard's delete confirmation, Timestamp's clear-queue confirmation, and Timestamp's leave-page confirmation each hand-rolled the same `AlertDialog` markup                                                     | `ConfirmDialog.vue` — a shared wrapper over the AlertDialog primitives, used by all three                  |
 
 - **Extraction, not a rewrite**: every item above was verified to leave component
   behavior and render output unchanged — checked against `type-check`/`lint`/`build`
@@ -295,7 +299,7 @@ SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
   logic (Dashboard's race-safe delete guard, the leave-confirmation's
   Promise-based flow) was left untouched — only the markup moved into
   `ConfirmDialog.vue`. See UX_DECISIONS.md → Architecture for the full
-  reasoning, and for why the *flow orchestration itself*
+  reasoning, and for why the _flow orchestration itself_
   (`idle→ready→otp→result→send`) was deliberately left unsplit while these
   narrower pieces were extracted.
 
