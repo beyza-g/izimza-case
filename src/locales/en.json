@@ -70,12 +70,16 @@
       "viewAll": "View all →",
       "file": "File",
       "date": "Date",
-      "status": "Status",
+      "operationType": "Operation type",
       "actions": "Actions",
       "empty": "No archived documents yet.",
       "actionsFor": "Actions for {name}",
       "emailSend": "Send by email",
       "viewCertificate": "View certificate"
+    },
+    "operationTypes": {
+      "timestamp": "Timestamp",
+      "sign": "Signing"
     },
     "certificate": {
       "title": "Certificate for {name}",
@@ -115,6 +119,7 @@
     "queue": {
       "title": "Document queue",
       "processing": "In progress",
+      "completed": "Completed",
       "clearAll": "Clear all",
       "status": {
         "queued": "Waiting",
@@ -138,6 +143,8 @@
       "credits": "{count} credits",
       "processingBadge": "In progress",
       "processingDescription": "Verification and result steps continue in the dialog.",
+      "completedBadge": "Completed",
+      "completedDescription": "The operation is complete — results are shown in the dialog.",
       "summary": "Operation summary",
       "insufficientTitle": "Insufficient credit balance",
       "insufficientDescription": "{queued} documents in the queue need {cost} credits, but your balance is {remaining} credits.",
@@ -255,6 +262,11 @@
       "closeAllSessions": "Close all",
       "closingAllSessions": "Closing…"
     },
+    "closeSessionsDialog": {
+      "title": "Close all sessions",
+      "description": "Sessions on other devices will be closed. This session will stay open. Are you sure?",
+      "confirm": "Yes, close"
+    },
     "badges": {
       "nesVerified": "NES verified",
       "nesTooltip": "Account verified with a Qualified Electronic Certificate",
@@ -274,6 +286,8 @@
       "changing": "Changing…",
       "toastSuccess": "Password changed (demo account protected).",
       "demoNotice": "In this demo, changing your password hits a real request — but the test account's access is preserved server-side.",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
       "rules": {
         "minLength": "At least 8 characters",
         "upper": "At least 1 uppercase letter",

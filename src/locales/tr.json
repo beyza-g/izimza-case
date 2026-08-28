@@ -70,12 +70,16 @@
       "viewAll": "Tümünü gör →",
       "file": "Dosya",
       "date": "Tarih",
-      "status": "Durum",
+      "operationType": "İşlem Tipi",
       "actions": "İşlem",
       "empty": "Henüz arşivlenmiş belge yok.",
       "actionsFor": "{name} için işlemler",
       "emailSend": "E-posta ile gönder",
       "viewCertificate": "Belge sertifikasını görüntüle"
+    },
+    "operationTypes": {
+      "timestamp": "Zaman Damgası",
+      "sign": "İmzalama"
     },
     "certificate": {
       "title": "{name} sertifikası",
@@ -115,6 +119,7 @@
     "queue": {
       "title": "Belge kuyruğu",
       "processing": "İşlem sürüyor",
+      "completed": "Tamamlandı",
       "clearAll": "Tümünü sil",
       "status": {
         "queued": "Bekliyor",
@@ -138,6 +143,8 @@
       "credits": "{count} kontör",
       "processingBadge": "İşlem sürüyor",
       "processingDescription": "Doğrulama ve sonuç adımları açılan pencerede devam ediyor.",
+      "completedBadge": "Tamamlandı",
+      "completedDescription": "İşlem tamamlandı, sonuçlar açılan pencerede görüntüleniyor.",
       "summary": "İşlem özeti",
       "insufficientTitle": "Yetersiz kontör bakiyesi",
       "insufficientDescription": "Kuyruktaki {queued} belge için {cost} kontör gerekiyor, bakiyenizde {remaining} kontör var.",
@@ -255,6 +262,11 @@
       "closeAllSessions": "Tümünü kapat",
       "closingAllSessions": "Kapatılıyor…"
     },
+    "closeSessionsDialog": {
+      "title": "Tüm oturumları kapat",
+      "description": "Diğer cihazlardaki oturumlar kapatılacak, bu oturum açık kalacak. Emin misiniz?",
+      "confirm": "Evet, kapat"
+    },
     "badges": {
       "nesVerified": "NES doğrulandı",
       "nesTooltip": "Nitelikli Elektronik Sertifika ile doğrulanmış hesap",
@@ -274,6 +286,8 @@
       "changing": "Değiştiriliyor…",
       "toastSuccess": "Şifre değiştirildi (demo hesabı korunuyor).",
       "demoNotice": "Bu demo ortamında şifre değiştirme gerçek bir isteğe bağlıdır; test hesabının erişimini korumak için sunucu tarafında ayrıca ele alınır.",
+      "showPassword": "Şifreyi göster",
+      "hidePassword": "Şifreyi gizle",
       "rules": {
         "minLength": "En az 8 karakter",
         "upper": "En az 1 büyük harf",

@@ -2,7 +2,16 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { onBeforeRouteLeave } from 'vue-router'
-import { AlertTriangle, Eye, Plus, Timer, Trash2, UploadCloud, X } from 'lucide-vue-next'
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Eye,
+  Plus,
+  Timer,
+  Trash2,
+  UploadCloud,
+  X,
+} from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
 import { otpLength, recipients as recipientSeed } from '@/data/mockData'
@@ -109,6 +118,15 @@ const isModalStep = computed(
     flow.value === 'result' ||
     flow.value === 'send' ||
     flow.value === 'sent',
+)
+
+// isModalStep alone can't distinguish "still committing" (otp — files are
+// being sent to the server) from "already committed, just showing results"
+// (result/send/sent) — the background queue/panel badges need that split so
+// they don't keep reading "Processing" once the operation has actually
+// finished and the modal has moved on to showing its outcome.
+const isCommitDone = computed(
+  () => flow.value === 'result' || flow.value === 'send' || flow.value === 'sent',
 )
 
 // Narrows Flow down to TimestampCommitModal's own step prop type. Kept as a
@@ -305,6 +323,7 @@ async function commitFile(file: QueueFile, signal?: AbortSignal) {
           sizeMb: Math.round((file.file.size / (1024 * 1024)) * 10) / 10 || 0.1,
           uploadedAt: new Date().toISOString(),
           status: 'pending',
+          operationType: 'timestamp',
         },
         { signal },
       )
@@ -618,10 +637,16 @@ onBeforeUnmount(() => {
           <div class="flex items-center justify-between px-5 py-4 border-b border-border">
             <span class="text-[15px] font-semibold">{{ t('timestamp.queue.title') }}</span>
             <span
-              v-if="isModalStep"
+              v-if="isModalStep && !isCommitDone"
               class="text-xs font-medium text-warning bg-warning/10 px-2.5 py-1 rounded-full"
             >
               {{ t('timestamp.queue.processing') }}
+            </span>
+            <span
+              v-else-if="isCommitDone"
+              class="text-xs font-medium text-success bg-success/10 px-2.5 py-1 rounded-full"
+            >
+              {{ t('timestamp.queue.completed') }}
             </span>
             <div v-else class="flex items-center gap-3">
               <span class="text-xs text-muted-foreground">{{
@@ -754,14 +779,25 @@ onBeforeUnmount(() => {
         <template v-else-if="isModalStep">
           <div class="flex items-center justify-between">
             <span class="text-[15px] font-semibold">{{ t('timestamp.panel.title') }}</span>
-            <span class="font-mono text-[10px] tracking-wide uppercase text-warning">{{
-              t('timestamp.panel.processingBadge')
-            }}</span>
+            <span
+              class="font-mono text-[10px] tracking-wide uppercase"
+              :class="isCommitDone ? 'text-success' : 'text-warning'"
+              >{{
+                isCommitDone
+                  ? t('timestamp.panel.completedBadge')
+                  : t('timestamp.panel.processingBadge')
+              }}</span
+            >
           </div>
           <div class="flex-1 flex flex-col items-center justify-center gap-3.5 text-center py-6">
-            <Timer class="w-6 h-6 text-muted-foreground" />
+            <CheckCircle2 v-if="isCommitDone" class="w-6 h-6 text-success" />
+            <Timer v-else class="w-6 h-6 text-muted-foreground" />
             <p class="text-[13px] leading-relaxed text-muted-foreground max-w-[26ch] m-0">
-              {{ t('timestamp.panel.processingDescription') }}
+              {{
+                isCommitDone
+                  ? t('timestamp.panel.completedDescription')
+                  : t('timestamp.panel.processingDescription')
+              }}
             </p>
           </div>
           <div class="border-t border-border pt-3.5 flex items-center justify-between">
@@ -827,7 +863,9 @@ onBeforeUnmount(() => {
                 >
                   {{ t('timestamp.panel.remaining') }}
                 </p>
-                <p class="text-2xl font-semibold tracking-tight text-primary dark:text-foreground m-0">
+                <p
+                  class="text-2xl font-semibold tracking-tight text-primary dark:text-foreground m-0"
+                >
                   {{ remainingAfter }}
                 </p>
               </div>
