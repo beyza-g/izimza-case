@@ -5,7 +5,7 @@ import { useRouter } from 'vue-router'
 import { Download, Eye, Mail, MoreVertical, Trash2, UploadCloud } from 'lucide-vue-next'
 import { useQueryClient } from '@tanstack/vue-query'
 import StatCard from '@/components/ui/StatCard.vue'
-import StatusBadge from '@/components/ui/StatusBadge.vue'
+import OperationTypeBadge from '@/components/ui/OperationTypeBadge.vue'
 import SkeletonBlock from '@/components/ui/SkeletonBlock.vue'
 import {
   DropdownMenu,
@@ -238,7 +238,7 @@ function confirmDelete() {
         >
           <div class="h-1.5 rounded-full bg-muted overflow-hidden">
             <div
-              class="h-full rounded-full bg-primary"
+              class="h-full rounded-full bg-primary dark:bg-foreground"
               :style="{ width: `${archive.percent}%` }"
             ></div>
           </div>
@@ -298,7 +298,9 @@ function confirmDelete() {
     <div class="bg-card border border-border rounded-2xl overflow-hidden">
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
         <span class="text-[15px] font-semibold">{{ t('dashboard.table.title') }}</span>
-        <span class="text-[13px] font-medium text-primary dark:text-foreground">{{ t('dashboard.table.viewAll') }}</span>
+        <span class="text-[13px] font-medium text-primary dark:text-foreground cursor-pointer">{{
+          t('dashboard.table.viewAll')
+        }}</span>
       </div>
 
       <div
@@ -309,7 +311,7 @@ function confirmDelete() {
       >
         <span>{{ t('dashboard.table.file') }}</span
         ><span>{{ t('dashboard.table.date') }}</span
-        ><span>{{ t('dashboard.table.status') }}</span
+        ><span>{{ t('dashboard.table.operationType') }}</span
         ><span class="sr-only">{{ t('dashboard.table.actions') }}</span>
       </div>
 
@@ -357,7 +359,7 @@ function confirmDelete() {
               <span class="text-sm font-medium truncate" :title="doc.name">{{ doc.name }}</span>
             </div>
             <span class="hidden md:inline text-[13px] text-muted-foreground">{{ doc.date }}</span>
-            <StatusBadge :status="doc.status" />
+            <OperationTypeBadge :operation-type="doc.operationType" />
 
             <div class="flex items-center justify-end gap-1">
               <button
