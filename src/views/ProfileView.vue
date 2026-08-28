@@ -7,6 +7,7 @@ import { useI18n } from 'vue-i18n'
 import { useQueryClient } from '@tanstack/vue-query'
 import { profileFields, profileSubnav } from '@/data/mockData'
 import ChangePasswordModal from '@/components/profile/ChangePasswordModal.vue'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useProfile } from '@/queries/useProfile'
 import { useAccount } from '@/queries/useAccount'
 import { useSecurity } from '@/queries/useSecurity'
@@ -135,6 +136,7 @@ function cancel() {
 }
 
 const closingSessions = ref(false)
+const closeSessionsDialogOpen = ref(false)
 
 async function closeAllSessions() {
   closingSessions.value = true
@@ -145,6 +147,10 @@ async function closeAllSessions() {
   } finally {
     closingSessions.value = false
   }
+}
+
+function requestCloseAllSessions() {
+  closeSessionsDialogOpen.value = true
 }
 
 const { onPhoneInput } = usePhoneInputMask((formatted) => {
@@ -249,8 +255,18 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
             </p>
           </div>
         </div>
-        <div class="border-t border-border pt-4 flex flex-col gap-2.5 items-end">
-          <div class="flex flex-wrap justify-end gap-2.5">
+        <div class="border-t border-border pt-4 flex max-[590px]:flex-col gap-2.5 items-center">
+          <p class="w-full text-[11.5px] leading-relaxed text-muted-foreground m-0">
+            {{ t('profile.kvkkText') }}
+            <a
+              href="#"
+              class="whitespace-nowrap text-primary dark:text-foreground hover:underline"
+              >{{ t('profile.kvkkReadLink') }}</a
+            >
+          </p>
+          <div
+            class="flex justify-end gap-2.5 max-[590px]:w-full max-[590px]:grid max-[590px]:grid-cols-2"
+          >
             <button
               type="button"
               class="border border-border rounded-[10px] px-4 py-2.5 text-[13px] font-medium text-muted-foreground disabled:opacity-60"
@@ -268,14 +284,6 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
               {{ saving ? t('profile.saving') : t('common.actions.save') }}
             </button>
           </div>
-          <p
-            class="w-full text-[11.5px] leading-relaxed text-muted-foreground text-right max-w-[65ch] m-0"
-          >
-            {{ t('profile.kvkkText') }}
-            <a href="#" class="whitespace-nowrap text-primary dark:text-foreground hover:underline">{{
-              t('profile.kvkkReadLink')
-            }}</a>
-          </p>
         </div>
       </div>
 
@@ -307,7 +315,7 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
             type="button"
             class="flex-none border border-border rounded-[9px] px-4 py-2.5 text-[13px] font-medium text-destructive disabled:opacity-60"
             :disabled="closingSessions"
-            @click="closeAllSessions"
+            @click="requestCloseAllSessions"
           >
             {{
               closingSessions
@@ -320,5 +328,21 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
     </div>
 
     <ChangePasswordModal v-if="passwordModalOpen" @close="passwordModalOpen = false" />
+
+    <ConfirmDialog
+      v-model:open="closeSessionsDialogOpen"
+      :title="t('profile.closeSessionsDialog.title')"
+      :description="t('profile.closeSessionsDialog.description')"
+      :cancel-label="t('common.actions.discard')"
+      :confirm-label="
+        closingSessions
+          ? t('profile.security.closingAllSessions')
+          : t('profile.closeSessionsDialog.confirm')
+      "
+      destructive
+      :confirm-disabled="closingSessions"
+      :cancel-disabled="closingSessions"
+      @confirm="closeAllSessions"
+    />
   </div>
 </template>
