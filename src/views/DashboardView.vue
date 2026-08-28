@@ -255,8 +255,8 @@ function confirmDelete() {
       class="border-[1.5px] border-dashed rounded-2xl bg-card transition duration-200 cursor-pointer p-6 md:p-8 flex flex-col md:flex-row items-center md:justify-between gap-6"
       :class="
         dragActive
-          ? 'border-primary bg-[color-mix(in_oklch,var(--primary)_8%,transparent)]'
-          : 'border-[color-mix(in_oklch,var(--primary)_30%,transparent)] hover:border-primary hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]'
+          ? 'border-primary bg-primary/8'
+          : 'border-primary/30 hover:border-primary hover:bg-primary/4'
       "
       @click="pickFile"
       @keydown.enter.prevent="pickFile"
@@ -270,7 +270,7 @@ function confirmDelete() {
         <div
           class="w-[52px] h-[52px] flex-none rounded-2xl bg-secondary flex items-center justify-center"
         >
-          <UploadCloud class="w-5 h-5 text-primary" />
+          <UploadCloud class="w-5 h-5 text-primary dark:text-foreground" />
         </div>
         <div>
           <p class="font-semibold text-base m-0 mb-1">{{ t('dashboard.upload.title') }}</p>
@@ -298,7 +298,7 @@ function confirmDelete() {
     <div class="bg-card border border-border rounded-2xl overflow-hidden">
       <div class="flex items-center justify-between px-5 py-4 border-b border-border">
         <span class="text-[15px] font-semibold">{{ t('dashboard.table.title') }}</span>
-        <span class="text-[13px] font-medium text-primary">{{ t('dashboard.table.viewAll') }}</span>
+        <span class="text-[13px] font-medium text-primary dark:text-foreground">{{ t('dashboard.table.viewAll') }}</span>
       </div>
 
       <div

@@ -366,9 +366,10 @@ async function verify() {
       return
     }
     if (error instanceof OtpInvalidError) {
+      // Unlike an expired code, a wrong-but-still-valid code leaves the
+      // digits alone (same reasoning as the network/5xx case below) — the
+      // user only mistyped one or two, not the whole thing.
       otpError.value = t('timestamp.otp.wrongCode')
-      otp.value = Array(otpLength).fill('')
-      nextTick(() => commitModalRef.value?.focusFirst())
       return
     }
     // Network/5xx — the interceptor's own toast already fired; leave the
@@ -587,8 +588,8 @@ onBeforeUnmount(() => {
           class="border-[1.5px] border-dashed rounded-2xl bg-card flex flex-col items-center justify-center gap-4 text-center p-10 cursor-pointer shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-[0_10px_24px_-12px_rgba(0,0,0,0.25)] transition duration-200"
           :class="
             dragActive
-              ? 'border-primary bg-[color-mix(in_oklch,var(--primary)_8%,transparent)]'
-              : 'border-[color-mix(in_oklch,var(--primary)_30%,transparent)] hover:border-primary hover:bg-[color-mix(in_oklch,var(--primary)_4%,transparent)]'
+              ? 'border-primary bg-primary/8'
+              : 'border-primary/30 hover:border-primary hover:bg-primary/4'
           "
           @click="pickFile"
           @keydown.enter.prevent="pickFile"
@@ -598,7 +599,7 @@ onBeforeUnmount(() => {
           @dragleave.prevent="onDragLeave"
           @drop.prevent="onDrop"
         >
-          <UploadCloud class="w-9 h-9 text-primary" />
+          <UploadCloud class="w-9 h-9 text-primary dark:text-foreground" />
           <div>
             <p class="font-semibold text-lg m-0 mb-1.5">{{ t('timestamp.dropzone.title') }}</p>
             <p class="text-[13px] text-muted-foreground m-0 max-w-[38ch]">
@@ -683,7 +684,7 @@ onBeforeUnmount(() => {
               <button
                 v-if="file.status === 'error'"
                 type="button"
-                class="text-xs font-semibold text-primary flex-none"
+                class="text-xs font-semibold text-primary dark:text-foreground flex-none"
                 @click="retryFile(file.id)"
               >
                 {{ t('common.actions.retry') }}
@@ -701,7 +702,7 @@ onBeforeUnmount(() => {
 
           <button
             type="button"
-            class="flex items-center gap-2.5 px-5 py-4 text-sm font-medium w-full text-left text-primary"
+            class="flex items-center gap-2.5 px-5 py-4 text-sm font-medium w-full text-left text-primary dark:text-foreground"
             @click="pickFile"
           >
             <Plus class="w-4 h-4" /> {{ t('timestamp.queue.addMore') }}
@@ -800,7 +801,7 @@ onBeforeUnmount(() => {
             </p>
             <RouterLink
               :to="{ name: 'profile' }"
-              class="text-xs font-semibold text-primary self-start hover:underline"
+              class="text-xs font-semibold text-primary dark:text-foreground self-start hover:underline"
             >
               {{ t('timestamp.panel.upgrade') }}
             </RouterLink>
@@ -826,7 +827,7 @@ onBeforeUnmount(() => {
                 >
                   {{ t('timestamp.panel.remaining') }}
                 </p>
-                <p class="text-2xl font-semibold tracking-tight text-primary m-0">
+                <p class="text-2xl font-semibold tracking-tight text-primary dark:text-foreground m-0">
                   {{ remainingAfter }}
                 </p>
               </div>

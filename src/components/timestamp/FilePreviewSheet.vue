@@ -159,8 +159,8 @@ function onPanelKeydown(event: KeyboardEvent) {
           class="w-16 h-16 flex-none rounded-lg border-2 flex flex-col items-center justify-center gap-0.5 overflow-hidden transition-colors"
           :class="
             i === activeIndex
-              ? 'border-primary bg-[color-mix(in_oklch,var(--primary)_8%,transparent)]'
-              : 'border-border hover:border-[color-mix(in_oklch,var(--primary)_50%,transparent)]'
+              ? 'border-primary bg-primary/8'
+              : 'border-border hover:border-primary/50'
           "
           :aria-label="f.name"
           :aria-current="i === activeIndex"

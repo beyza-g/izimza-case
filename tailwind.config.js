@@ -7,51 +7,66 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: 'var(--background)',
-        foreground: 'var(--foreground)',
+        // Tokens are bare OKLCH channels in main.css (`--x: L C H`), wrapped
+        // here as `oklch(var(--x) / <alpha-value>)` so opacity-modifiers
+        // (`bg-success/15`) work — Tailwind v3.4 can't parse a color out of
+        // a plain `var(--x)`. Tailwind v4 removes this constraint.
+        background: 'oklch(var(--background) / <alpha-value>)',
+        foreground: 'oklch(var(--foreground) / <alpha-value>)',
         card: {
-          DEFAULT: 'var(--card)',
-          foreground: 'var(--card-foreground)',
+          DEFAULT: 'oklch(var(--card) / <alpha-value>)',
+          foreground: 'oklch(var(--card-foreground) / <alpha-value>)',
         },
         popover: {
-          DEFAULT: 'var(--popover)',
-          foreground: 'var(--popover-foreground)',
+          DEFAULT: 'oklch(var(--popover) / <alpha-value>)',
+          foreground: 'oklch(var(--popover-foreground) / <alpha-value>)',
         },
         toast: {
-          DEFAULT: 'var(--toast)',
-          foreground: 'var(--toast-foreground)',
+          DEFAULT: 'oklch(var(--toast) / <alpha-value>)',
+          foreground: 'oklch(var(--toast-foreground) / <alpha-value>)',
         },
         primary: {
-          DEFAULT: 'var(--primary)',
-          foreground: 'var(--primary-foreground)',
+          DEFAULT: 'oklch(var(--primary) / <alpha-value>)',
+          foreground: 'oklch(var(--primary-foreground) / <alpha-value>)',
         },
         secondary: {
-          DEFAULT: 'var(--secondary)',
-          foreground: 'var(--secondary-foreground)',
+          DEFAULT: 'oklch(var(--secondary) / <alpha-value>)',
+          foreground: 'oklch(var(--secondary-foreground) / <alpha-value>)',
         },
         muted: {
-          DEFAULT: 'var(--muted)',
-          foreground: 'var(--muted-foreground)',
+          DEFAULT: 'oklch(var(--muted) / <alpha-value>)',
+          foreground: 'oklch(var(--muted-foreground) / <alpha-value>)',
         },
         panel: {
           active: {
-            DEFAULT: 'var(--panel-active)',
-            foreground: 'var(--panel-active-foreground)',
+            DEFAULT: 'oklch(var(--panel-active) / <alpha-value>)',
+            foreground: 'oklch(var(--panel-active-foreground) / <alpha-value>)',
           },
         },
         accent: {
-          DEFAULT: 'var(--accent)',
-          foreground: 'var(--accent-foreground)',
+          DEFAULT: 'oklch(var(--accent) / <alpha-value>)',
+          foreground: 'oklch(var(--accent-foreground) / <alpha-value>)',
         },
         destructive: {
-          DEFAULT: 'var(--destructive)',
-          foreground: 'var(--destructive-foreground)',
+          DEFAULT: 'oklch(var(--destructive) / <alpha-value>)',
+          foreground: 'oklch(var(--destructive-foreground) / <alpha-value>)',
         },
-        border: 'var(--border)',
-        input: 'var(--input)',
-        ring: 'var(--ring)',
-        success: 'var(--success)',
-        warning: 'var(--warning)',
+        border: 'oklch(var(--border) / <alpha-value>)',
+        input: 'oklch(var(--input) / <alpha-value>)',
+        ring: 'oklch(var(--ring) / <alpha-value>)',
+        success: 'oklch(var(--success) / <alpha-value>)',
+        warning: 'oklch(var(--warning) / <alpha-value>)',
+      },
+      // Tailwind's default opacity scale only defines multiples of 5
+      // (5, 10, 15, 20, ...). This project's color-opacity modifiers
+      // (bg-X/4, bg-X/8, bg-X/12, ...) include fractions outside that
+      // scale — a modifier with no matching key here silently generates
+      // no CSS at all, not a fallback. Only the fractions actually
+      // missing from the default scale are added.
+      opacity: {
+        4: '0.04',
+        8: '0.08',
+        12: '0.12',
       },
       borderRadius: {
         DEFAULT: 'var(--radius)',
