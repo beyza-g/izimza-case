@@ -123,7 +123,9 @@ function onPanelKeydown(event: KeyboardEvent) {
     @panel-keydown="onPanelKeydown"
   >
     <template #header>
-      <p class="text-[15px] font-semibold truncate m-0">{{ activeFile?.name }}</p>
+      <p class="text-[15px] font-semibold truncate m-0" :title="activeFile?.name">
+        {{ activeFile?.name }}
+      </p>
     </template>
 
     <div class="flex-1 min-h-0 bg-muted flex items-center justify-center overflow-hidden">

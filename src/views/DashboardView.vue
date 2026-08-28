@@ -354,7 +354,7 @@ function confirmDelete() {
                 class="w-[30px] h-[30px] flex-none rounded-lg bg-secondary text-secondary-foreground flex items-center justify-center font-mono text-[9px] font-medium"
                 >{{ doc.ext }}</span
               >
-              <span class="text-sm font-medium truncate">{{ doc.name }}</span>
+              <span class="text-sm font-medium truncate" :title="doc.name">{{ doc.name }}</span>
             </div>
             <span class="hidden md:inline text-[13px] text-muted-foreground">{{ doc.date }}</span>
             <StatusBadge :status="doc.status" />
