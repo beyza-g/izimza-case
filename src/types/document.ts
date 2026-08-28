@@ -1,4 +1,4 @@
-import type { DocStatus } from '@/data/mockData'
+import type { DocStatus, OperationType } from '@/data/mockData'
 
 export type RawDocType = 'pdf' | 'docx' | 'xlsx' | 'png'
 export type RawDocStatus = 'signed' | 'pending' | 'archived' | 'cancelled'
@@ -10,6 +10,7 @@ export interface RawDocument {
   sizeMb: number
   uploadedAt: string
   status: RawDocStatus
+  operationType: OperationType
 }
 
 export interface Document {
@@ -19,4 +20,5 @@ export interface Document {
   sizeMb: number
   date: string
   status: DocStatus
+  operationType: OperationType
 }

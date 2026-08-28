@@ -40,7 +40,14 @@ function onDocumentClick(event: MouseEvent) {
   const target = event.target as Node
   const insideTrigger = root.value?.contains(target)
   const insidePopover = popoverEl.value?.contains(target)
-  if (!insideTrigger && !insidePopover) {
+  // The language selector's DropdownMenuContent (and any other reka-ui
+  // dropdown/select content) portals to <body> instead of staying inside
+  // popoverEl's DOM subtree, so a click on one of its items would otherwise
+  // read as "outside" and close this popover along with it.
+  const insidePortaledMenu = (target as Element).closest?.(
+    '[data-slot="dropdown-menu-content"]',
+  )
+  if (!insideTrigger && !insidePopover && !insidePortaledMenu) {
     open.value = false
   }
 }

@@ -1,5 +1,5 @@
 import { http } from '@/lib/http'
-import type { DocStatus } from '@/data/mockData'
+import type { DocStatus, OperationType } from '@/data/mockData'
 import type { Document, RawDocument, RawDocStatus, RawDocType } from '@/types/document'
 
 export type { RawDocType, RawDocStatus, RawDocument, Document }
@@ -11,6 +11,7 @@ const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
 })
 
 const VALID_STATUSES = new Set<string>(['signed', 'pending', 'archived', 'cancelled'])
+const VALID_OPERATION_TYPES = new Set<string>(['timestamp', 'sign'])
 
 export function mapDocument(raw: RawDocument): Document {
   return {
@@ -21,6 +22,9 @@ export function mapDocument(raw: RawDocument): Document {
     date: dateFormatter.format(new Date(raw.uploadedAt)),
     // Pass-through validation: Use backend status directly if valid, else fallback to 'pending'
     status: VALID_STATUSES.has(raw.status) ? (raw.status as DocStatus) : 'pending',
+    operationType: VALID_OPERATION_TYPES.has(raw.operationType)
+      ? (raw.operationType as OperationType)
+      : 'timestamp',
   }
 }
 
@@ -41,6 +45,7 @@ export interface CreateDocumentInput {
   sizeMb: number
   uploadedAt: string
   status: RawDocStatus
+  operationType: OperationType
 }
 
 export async function createDocument(

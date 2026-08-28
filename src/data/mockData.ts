@@ -18,6 +18,20 @@ export const statusClasses: Record<DocStatus, string> = {
   cancelled: 'bg-destructive/10 text-destructive',
 }
 
+// What operation produced the document — independent of DocStatus (its
+// current lifecycle state). A document can be archived after either flow.
+export type OperationType = 'timestamp' | 'sign'
+
+export const operationTypeLabels: Record<OperationType, string> = {
+  timestamp: 'dashboard.operationTypes.timestamp',
+  sign: 'dashboard.operationTypes.sign',
+}
+
+export const operationTypeClasses: Record<OperationType, string> = {
+  timestamp: 'bg-primary/10 text-primary dark:text-foreground',
+  sign: 'bg-success/10 text-success',
+}
+
 export interface NavItem {
   key: string
   labelKey: string

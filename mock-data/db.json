@@ -24,7 +24,8 @@
       "type": "png",
       "sizeMb": 0.2,
       "uploadedAt": "2026-08-05T17:00:00+03:00",
-      "status": "cancelled"
+      "status": "cancelled",
+      "operationType": "timestamp"
     },
     {
       "id": 2,
@@ -32,7 +33,8 @@
       "type": "pdf",
       "sizeMb": 0.9,
       "uploadedAt": "2026-08-08T09:15:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "sign"
     },
     {
       "id": 3,
@@ -40,7 +42,8 @@
       "type": "pdf",
       "sizeMb": 0.3,
       "uploadedAt": "2026-08-10T13:22:00+03:00",
-      "status": "signed"
+      "status": "signed",
+      "operationType": "sign"
     },
     {
       "id": 4,
@@ -48,7 +51,8 @@
       "type": "pdf",
       "sizeMb": 0.9,
       "uploadedAt": "2026-08-12T14:00:00+03:00",
-      "status": "pending"
+      "status": "pending",
+      "operationType": "timestamp"
     },
     {
       "id": 5,
@@ -56,7 +60,8 @@
       "type": "docx",
       "sizeMb": 0.5,
       "uploadedAt": "2026-08-15T16:45:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "sign"
     },
     {
       "id": 6,
@@ -64,7 +69,8 @@
       "type": "pdf",
       "sizeMb": 1.6,
       "uploadedAt": "2026-08-17T10:30:00+03:00",
-      "status": "signed"
+      "status": "signed",
+      "operationType": "timestamp"
     },
     {
       "id": 7,
@@ -72,7 +78,8 @@
       "type": "pdf",
       "sizeMb": 2.1,
       "uploadedAt": "2026-08-19T14:12:00+03:00",
-      "status": "cancelled"
+      "status": "cancelled",
+      "operationType": "sign"
     },
     {
       "id": 8,
@@ -80,7 +87,8 @@
       "type": "pdf",
       "sizeMb": 0.4,
       "uploadedAt": "2026-08-21T09:30:00+03:00",
-      "status": "pending"
+      "status": "pending",
+      "operationType": "timestamp"
     },
     {
       "id": 9,
@@ -88,7 +96,8 @@
       "type": "pdf",
       "sizeMb": 0.8,
       "uploadedAt": "2026-08-24T11:20:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "sign"
     },
     {
       "id": 10,
@@ -96,7 +105,8 @@
       "type": "pdf",
       "sizeMb": 1.2,
       "uploadedAt": "2026-08-25T15:41:00+03:00",
-      "status": "signed"
+      "status": "signed",
+      "operationType": "sign"
     },
     {
       "id": 11,
@@ -104,7 +114,8 @@
       "type": "pdf",
       "sizeMb": 0.6,
       "uploadedAt": "2026-08-27T10:15:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "timestamp"
     },
     {
       "id": 12,
@@ -112,7 +123,8 @@
       "type": "pdf",
       "sizeMb": 1.8,
       "uploadedAt": "2026-08-20T13:40:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "timestamp"
     },
     {
       "id": 13,
@@ -120,7 +132,17 @@
       "type": "pdf",
       "sizeMb": 0.7,
       "uploadedAt": "2026-08-03T11:05:00+03:00",
-      "status": "archived"
+      "status": "archived",
+      "operationType": "timestamp"
+    },
+    {
+      "name": "İzometri Frontend Case 2026_v2 (1).pdf",
+      "type": "pdf",
+      "sizeMb": 0.8,
+      "uploadedAt": "2026-08-28T15:53:40.749Z",
+      "status": "archived",
+      "operationType": "timestamp",
+      "id": 14
     }
   ],
   "timestampOperations": [
@@ -144,6 +166,13 @@
       "status": "tamamlandı",
       "creditCost": 1,
       "createdAt": "2026-08-25T15:41:07+03:00"
+    },
+    {
+      "documentId": 14,
+      "status": "completed",
+      "creditCost": 1,
+      "createdAt": "2026-08-28T15:53:40.762Z",
+      "id": 4
     }
   ],
   "auth": {
