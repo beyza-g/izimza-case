@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { AlertCircle, AlertTriangle, Check, Download, Mail, Search } from 'lucide-vue-next'
+import {
+  AlertCircle,
+  AlertTriangle,
+  Check,
+  Clock,
+  Download,
+  Mail,
+  RotateCw,
+  Search,
+  Smartphone,
+} from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Recipient } from '@/data/mockData'
 import { useRecipientSelection, type RecipientItem } from '@/composables/useRecipientSelection'
@@ -79,24 +89,84 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
   if (props.lastCompletedCount > 0 && props.errorCount > 0) return 'partial'
   return 'failure'
 })
+
+// Drives the OTP step's icon/card/box/status-row/button styling. Expiry
+// takes priority over a wrong-code error, matching the same precedence the
+// digit boxes' border already used.
+const otpVisualState = computed<'neutral' | 'wrong' | 'expired'>(() => {
+  if (props.isOtpExpired) return 'expired'
+  if (props.otpError) return 'wrong'
+  return 'neutral'
+})
+
+const otpCardCopy = computed(() => {
+  switch (otpVisualState.value) {
+    case 'wrong':
+      return {
+        icon: AlertCircle,
+        iconClass: 'bg-destructive/12 text-destructive',
+        title: t('timestamp.otp.wrongTitle'),
+        description: t('timestamp.otp.wrongDescription'),
+      }
+    case 'expired':
+      return {
+        icon: RotateCw,
+        iconClass: 'bg-warning/15 text-warning',
+        title: t('timestamp.otp.expiredLabel'),
+        description: t('timestamp.otp.expiredDescription'),
+      }
+    default:
+      return {
+        icon: Smartphone,
+        iconClass: 'bg-primary/10 text-primary dark:text-foreground',
+        title: t('timestamp.otp.heading'),
+        description: t('timestamp.otp.description', { phone: props.phone }),
+      }
+  }
+})
+
+// The one primary CTA in the OTP step does double duty: it re-submits the
+// entered digits normally, but once the code has expired it becomes the
+// only way to request a new one (no separate "Tekrar gönder" link anymore —
+// one CTA, not two competing affordances).
+const primaryButtonState = computed(() => {
+  if (props.submitting) {
+    return { label: t('timestamp.otp.verifying'), disabled: true, action: 'verify' as const }
+  }
+  if (otpVisualState.value === 'expired') {
+    return { label: t('timestamp.otp.sendNewCode'), disabled: false, action: 'resend-otp' as const }
+  }
+  return {
+    label: otpVisualState.value === 'wrong' ? t('common.actions.retry') : t('timestamp.otp.verify'),
+    disabled: !props.otpComplete,
+    action: 'verify' as const,
+  }
+})
+
+function triggerPrimaryAction() {
+  if (primaryButtonState.value.action === 'resend-otp') emit('resend-otp')
+  else emit('verify')
+}
 </script>
 
 <template>
   <!-- OTP -->
   <template v-if="step === 'otp'">
-    <div class="flex items-center justify-between">
-      <span class="text-[15px] font-semibold">{{ t('timestamp.otp.title') }}</span>
-      <span class="font-mono text-[10px] tracking-wide uppercase text-muted-foreground pr-8">{{
-        t('timestamp.documentsCount', { count: processingCount })
-      }}</span>
-    </div>
-    <div>
-      <p class="text-[15px] font-semibold tracking-tight m-0 mb-1.5">
-        {{ t('timestamp.otp.heading') }}
-      </p>
-      <p class="text-xs leading-relaxed text-muted-foreground m-0">
-        {{ t('timestamp.otp.description', { phone }) }}
-      </p>
+    <div class="flex items-start gap-3">
+      <span
+        class="w-12 h-12 flex-none rounded-2xl flex items-center justify-center"
+        :class="otpCardCopy.iconClass"
+      >
+        <component :is="otpCardCopy.icon" class="w-6 h-6" />
+      </span>
+      <div>
+        <p class="text-[15px] font-semibold tracking-tight m-0 mb-1">
+          {{ otpCardCopy.title }}
+        </p>
+        <p class="text-xs leading-relaxed text-muted-foreground m-0">
+          {{ otpCardCopy.description }}
+        </p>
+      </div>
     </div>
     <div class="grid grid-cols-6 gap-2">
       <input
@@ -112,60 +182,43 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
         type="text"
         inputmode="numeric"
         maxlength="1"
-        class="h-[54px] border-[1.5px] rounded-[11px] bg-card text-center font-mono text-xl font-medium"
-        :class="otpError ? 'border-destructive' : 'border-input focus:border-primary'"
+        :disabled="isOtpExpired"
+        class="h-[54px] border-[1.5px] rounded-[11px] text-center font-mono text-xl font-medium disabled:cursor-not-allowed"
+        :class="{
+          'border-destructive bg-destructive/8 text-destructive focus:ring-4 focus:ring-destructive/15':
+            otpVisualState === 'wrong',
+          'border-border bg-muted text-muted-foreground': otpVisualState === 'expired',
+          'bg-card border-input focus:border-primary': otpVisualState === 'neutral',
+        }"
         @input="onOtpInput(i, $event)"
         @keydown="onOtpKeydown(i, $event)"
       />
     </div>
-    <!-- The expired status label below is the single source of truth for
-         "this code is expired" — a failed submit while expired still turns
-         the digit boxes' border red (via otpError, unchanged), but doesn't
-         also render a second, redundant text message saying the same thing
-         a different way. otpError's text only ever shows for the *other*
-         failure mode: a wrong-but-not-expired code. -->
-    <p v-if="otpError && !isOtpExpired" class="text-xs text-destructive m-0 -mt-2">
-      {{ otpError }}
-    </p>
-    <div class="flex items-center justify-between">
+    <div class="flex items-center gap-1.5 text-xs">
+      <Clock class="w-3.5 h-3.5 flex-none text-muted-foreground" />
+      <span class="font-mono text-muted-foreground">{{ t('timestamp.otp.validityLabel') }}</span>
       <span
-        class="font-mono text-xs flex items-center gap-1.5"
-        :class="isOtpExpired ? 'text-destructive font-medium' : 'text-muted-foreground'"
+        class="font-mono font-medium"
+        :class="{
+          'text-destructive': otpVisualState === 'wrong',
+          'text-warning': otpVisualState === 'expired',
+          'text-foreground': otpVisualState === 'neutral',
+        }"
+        >{{ otpVisualState === 'expired' ? t('timestamp.otp.expiredValue') : countdownLabel }}</span
       >
-        <AlertCircle v-if="isOtpExpired" class="w-3.5 h-3.5 flex-none" />
-        {{
-          isOtpExpired
-            ? t('timestamp.otp.expiredLabel')
-            : t('timestamp.otp.remainingTime', { time: countdownLabel })
-        }}
-      </span>
-      <!-- Same position regardless of state — expiry doesn't move this
-           control anywhere, it just switches it from an inert label to a
-           genuinely clickable, visually emphasized affordance. Warning-toned,
-           not the main-CTA accent color: resending isn't the positive/primary
-           action here, it's a recovery step after a lapsed code. -->
-      <button
-        type="button"
-        class="text-xs font-semibold rounded-lg transition-colors disabled:cursor-not-allowed"
-        :class="
-          isOtpExpired
-            ? 'text-warning bg-[color-mix(in_oklch,var(--warning)_15%,transparent)] px-3 py-1.5 hover:bg-[color-mix(in_oklch,var(--warning)_22%,transparent)]'
-            : 'text-muted-foreground px-1 py-1.5'
-        "
-        :disabled="!isOtpExpired"
-        @click="emit('resend-otp')"
-      >
-        {{ t('timestamp.otp.resend') }}
-      </button>
     </div>
     <button
       type="button"
-      class="w-full rounded-[11px] py-3.5 text-[15px] font-semibold transition-colors"
-      :class="otpComplete ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'"
-      :disabled="!otpComplete || submitting"
-      @click="emit('verify')"
+      class="w-full rounded-[11px] py-3.5 text-[15px] font-semibold transition-colors disabled:cursor-not-allowed"
+      :class="
+        primaryButtonState.disabled
+          ? 'bg-muted text-muted-foreground'
+          : 'bg-accent text-accent-foreground'
+      "
+      :disabled="primaryButtonState.disabled"
+      @click="triggerPrimaryAction"
     >
-      {{ submitting ? t('timestamp.otp.verifying') : t('timestamp.otp.verify') }}
+      {{ primaryButtonState.label }}
     </button>
     <span
       class="text-xs font-medium text-muted-foreground rounded-lg text-center py-1 cursor-pointer"
@@ -274,7 +327,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
         </p>
         <button
           type="button"
-          class="text-xs font-semibold text-primary"
+          class="text-xs font-semibold text-primary dark:text-foreground"
           @click="emit('retry-all-errors')"
         >
           {{ t('timestamp.result.retryAll') }}
@@ -307,7 +360,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
         </button>
       </div>
       <span
-        class="text-xs font-medium text-primary text-center cursor-pointer"
+        class="text-xs font-medium text-primary dark:text-foreground text-center cursor-pointer"
         @click="emit('reset-flow')"
         >{{ t('timestamp.result.newDocument') }}</span
       >
@@ -390,7 +443,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
 
       <p v-if="recipients.length === 0" class="text-xs text-muted-foreground text-center py-3 m-0">
         {{ t('timestamp.send.noRecipients') }}
-        <RouterLink :to="{ name: 'profile' }" class="text-primary font-medium hover:underline">
+        <RouterLink :to="{ name: 'profile' }" class="text-primary dark:text-foreground font-medium hover:underline">
           {{ t('timestamp.send.addFromSettings') }}
         </RouterLink>
       </p>
@@ -405,7 +458,7 @@ const outcome = computed<'success' | 'partial' | 'failure'>(() => {
     <RouterLink
       v-if="recipients.length > 0"
       :to="{ name: 'profile' }"
-      class="text-xs font-medium text-primary hover:underline"
+      class="text-xs font-medium text-primary dark:text-foreground hover:underline"
     >
       {{ t('timestamp.send.addRecipient') }}
     </RouterLink>

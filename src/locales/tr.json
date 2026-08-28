@@ -178,15 +178,19 @@
     "otp": {
       "title": "Doğrulama",
       "heading": "Telefonuna gelen kodu gir",
-      "description": "{phone} numarasına gönderilen 6 haneli doğrulama kodunu gir.",
+      "description": "{phone} numarasına 6 haneli kod gönderildi.",
       "digitLabel": "{n}. hane",
       "wrongCode": "Kod hatalı, tekrar deneyin.",
       "expiredError": "Bu kodun süresi doldu, yeni bir kod iste.",
-      "remainingTime": "Kalan süre {time}",
       "expiredLabel": "Kodun süresi doldu",
-      "resend": "Tekrar gönder",
       "verify": "Doğrula",
-      "verifying": "Doğrulanıyor…"
+      "verifying": "Doğrulanıyor…",
+      "wrongTitle": "Kod eşleşmedi",
+      "wrongDescription": "Girdiğin kod telefonuna gönderilen kodla eşleşmiyor.",
+      "expiredDescription": "Güvenlik için kod 2 dakika sonra geçersiz olur.",
+      "validityLabel": "Kodun geçerlilik süresi",
+      "expiredValue": "doldu",
+      "sendNewCode": "Yeni kod gönder"
     },
     "result": {
       "title": "Sonuç",
@@ -268,7 +272,7 @@
       "currentError": "Mevcut şifre hatalı",
       "requirementsTitle": "Şifre gereksinimleri",
       "changing": "Değiştiriliyor…",
-      "toastSuccess": "Şifre değiştirildi.",
+      "toastSuccess": "Şifre değiştirildi (demo hesabı korunuyor).",
       "demoNotice": "Bu demo ortamında şifre değiştirme gerçek bir isteğe bağlıdır; test hesabının erişimini korumak için sunucu tarafında ayrıca ele alınır.",
       "rules": {
         "minLength": "En az 8 karakter",

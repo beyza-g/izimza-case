@@ -178,15 +178,19 @@
     "otp": {
       "title": "Verification",
       "heading": "Enter the code sent to your phone",
-      "description": "Enter the 6-digit verification code sent to {phone}.",
+      "description": "A 6-digit code was sent to {phone}.",
       "digitLabel": "Digit {n}",
       "wrongCode": "Incorrect code, please try again.",
       "expiredError": "This code has expired — request a new one.",
-      "remainingTime": "Time left {time}",
       "expiredLabel": "Code expired",
-      "resend": "Resend code",
       "verify": "Verify",
-      "verifying": "Verifying…"
+      "verifying": "Verifying…",
+      "wrongTitle": "Code doesn't match",
+      "wrongDescription": "The code you entered doesn't match the one sent to your phone.",
+      "expiredDescription": "For security, the code becomes invalid after 2 minutes.",
+      "validityLabel": "Code validity",
+      "expiredValue": "expired",
+      "sendNewCode": "Send new code"
     },
     "result": {
       "title": "Result",
@@ -268,7 +272,8 @@
       "currentError": "Current password is incorrect",
       "requirementsTitle": "Password requirements",
       "changing": "Changing…",
-      "toastSuccess": "Password changed.",
+      "toastSuccess": "Password changed (demo account protected).",
+      "demoNotice": "In this demo, changing your password hits a real request — but the test account's access is preserved server-side.",
       "rules": {
         "minLength": "At least 8 characters",
         "upper": "At least 1 uppercase letter",
