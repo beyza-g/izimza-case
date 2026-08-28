@@ -389,6 +389,7 @@ async function verify() {
       // digits alone (same reasoning as the network/5xx case below) — the
       // user only mistyped one or two, not the whole thing.
       otpError.value = t('timestamp.otp.wrongCode')
+      nextTick(() => commitModalRef.value?.focusFirst())
       return
     }
     // Network/5xx — the interceptor's own toast already fired; leave the
