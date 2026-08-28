@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { z } from 'zod'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
@@ -11,10 +11,12 @@ import { useProfile } from '@/queries/useProfile'
 import { useAccount } from '@/queries/useAccount'
 import { useSecurity } from '@/queries/useSecurity'
 import { updateProfile, type ProfileInfo } from '@/api/profile'
-import { extractDigits, formatPhone, PHONE_REGEX } from '@/lib/phone'
+import { closeAllSessions as closeAllSessionsRequest } from '@/api/security'
+import { PHONE_REGEX } from '@/lib/phone'
 import { formatDate, formatDateTime } from '@/lib/formatDate'
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
+import { usePhoneInputMask } from '@/composables/usePhoneInputMask'
 
 const { t } = useI18n({ useScope: 'global' })
 const { pushToast } = useToast()
@@ -132,31 +134,22 @@ function cancel() {
   attemptedSave.value = false
 }
 
-// Reformats the whole value from scratch on every keystroke (simple, no new
-// dependency) — the only extra care needed is mapping the caret back to the
-// same *digit* position afterward, so backspace/mid-string edits still feel
-// natural instead of always jumping to the end. Both counts go through
-// extractDigits() so the fixed leading "0" is never miscounted as a digit
-// the user typed, whether or not it's already in the string yet.
-function onPhoneInput(event: Event) {
-  const input = event.target as HTMLInputElement
-  const caretPos = input.selectionStart ?? input.value.length
-  const digitsBeforeCaret = extractDigits(input.value.slice(0, caretPos)).length
+const closingSessions = ref(false)
 
-  const formatted = formatPhone(input.value)
-  fields.phone = formatted
-
-  nextTick(() => {
-    let caret = formatted.length
-    for (let i = 1; i <= formatted.length; i++) {
-      if (extractDigits(formatted.slice(0, i)).length >= digitsBeforeCaret) {
-        caret = i
-        break
-      }
-    }
-    input.setSelectionRange(caret, caret)
-  })
+async function closeAllSessions() {
+  closingSessions.value = true
+  try {
+    await closeAllSessionsRequest()
+    queryClient.invalidateQueries({ queryKey: ['security'] })
+    pushToast(t('profile.toasts.sessionsClosed'), { tone: 'success' })
+  } finally {
+    closingSessions.value = false
+  }
 }
+
+const { onPhoneInput } = usePhoneInputMask((formatted) => {
+  fields.phone = formatted
+})
 </script>
 
 <template>
@@ -312,9 +305,15 @@ function onPhoneInput(event: Event) {
           </div>
           <button
             type="button"
-            class="flex-none border border-border rounded-[9px] px-4 py-2.5 text-[13px] font-medium text-destructive"
+            class="flex-none border border-border rounded-[9px] px-4 py-2.5 text-[13px] font-medium text-destructive disabled:opacity-60"
+            :disabled="closingSessions"
+            @click="closeAllSessions"
           >
-            {{ t('profile.security.closeAllSessions') }}
+            {{
+              closingSessions
+                ? t('profile.security.closingAllSessions')
+                : t('profile.security.closeAllSessions')
+            }}
           </button>
         </div>
       </div>
