@@ -165,9 +165,9 @@ function onOpenChange(value: boolean) {
           />
         </div>
         <div>
-          <label class="block text-xs font-medium text-muted-foreground mb-1.5"
-            >{{ t('profile.password.confirm') }}</label
-          >
+          <label class="block text-xs font-medium text-muted-foreground mb-1.5">{{
+            t('profile.password.confirm')
+          }}</label>
           <input
             v-model="confirm"
             type="password"

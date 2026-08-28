@@ -209,7 +209,6 @@ function removeFile(id: number) {
   }
 }
 
-
 const clearAllDialogOpen = ref(false)
 
 // Reachable only while flow is 'summary'/'idle' (the modal owns every step
