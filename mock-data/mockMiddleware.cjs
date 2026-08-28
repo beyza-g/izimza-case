@@ -18,6 +18,16 @@ function startOtpSession() {
 }
 
 module.exports = (req, res, next) => {
+  // Demo safeguard: this mock backend has exactly one shared account, so a
+  // real password-change PATCH would otherwise overwrite the credential
+  // anyone evaluating this app needs to keep using. Drop that one field
+  // before json-server's default router applies the patch — the request
+  // still round-trips for real (200, toast, query refetch all behave
+  // normally), only the actual credential never changes.
+  if (req.path === '/auth' && req.method === 'PATCH' && req.body) {
+    delete req.body.currentPassword
+  }
+
   if (req.path === '/__mock/validation-error') {
     return res.status(422).json({
       message: 'Doğrulama hatası',
