@@ -3,6 +3,8 @@ import { computed, nextTick, ref } from 'vue'
 import { AlertCircle, AlertTriangle, Check, Download, Mail, Search } from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 import type { Recipient } from '@/data/mockData'
+import { useRecipientSelection, type RecipientItem } from '@/composables/useRecipientSelection'
+import { useOtpDigitInput } from '@/composables/useOtpDigitInput'
 
 const { t } = useI18n({ useScope: 'global' })
 
@@ -43,27 +45,9 @@ const emit = defineEmits<{
 const otp = defineModel<string[]>('otp', { required: true })
 const recipientSearch = defineModel<string>('recipientSearch', { default: '' })
 
-const otpRefs = ref<HTMLInputElement[]>([])
 const searchInputEl = ref<HTMLInputElement | null>(null)
 
-function onOtpInput(index: number, event: Event) {
-  const input = event.target as HTMLInputElement
-  const value = input.value.replace(/\D/g, '').slice(-1)
-  otp.value[index] = value
-  if (value && index < otp.value.length - 1) {
-    otpRefs.value[index + 1]?.focus()
-  }
-}
-
-function onOtpKeydown(index: number, event: KeyboardEvent) {
-  if (event.key === 'Backspace' && !otp.value[index] && index > 0) {
-    otpRefs.value[index - 1]?.focus()
-  }
-}
-
-function focusFirst() {
-  nextTick(() => otpRefs.value[0]?.focus())
-}
+const { otpRefs, onOtpInput, onOtpKeydown, focusFirst } = useOtpDigitInput(otp)
 
 function focusSearch() {
   nextTick(() => searchInputEl.value?.focus())
@@ -74,49 +58,13 @@ defineExpose({ focusFirst, focusSearch })
 // Selected items (self + registered recipients) pin to one checkmarked
 // section at the top of the single scrollable surface — not chips — so
 // there is exactly one scroll surface for the whole recipient list.
-interface RecipientItem {
-  key: string
-  name: string
-  mail: string
-  isSelf: boolean
-}
-
-const selfItem = computed<RecipientItem>(() => ({
-  key: '__self__',
-  name: t('timestamp.send.self'),
-  mail: props.email,
-  isSelf: true,
-}))
-
-const selectedItems = computed<RecipientItem[]>(() => {
-  const items: RecipientItem[] = []
-  if (props.selfSelected) items.push(selfItem.value)
-  items.push(
-    ...props.recipients
-      .filter((r) => r.selected)
-      .map((r) => ({ key: r.mail, name: r.name, mail: r.mail, isSelf: false })),
-  )
-  return items
+const { selectedItems, unselectedItems, recipientCount } = useRecipientSelection({
+  recipients: () => props.recipients,
+  selfSelected: () => props.selfSelected,
+  email: () => props.email,
+  selfLabel: () => t('timestamp.send.self'),
+  search: recipientSearch,
 })
-
-const unselectedItems = computed<RecipientItem[]>(() => {
-  const items: RecipientItem[] = []
-  if (!props.selfSelected) items.push(selfItem.value)
-  items.push(
-    ...props.recipients
-      .filter((r) => !r.selected)
-      .map((r) => ({ key: r.mail, name: r.name, mail: r.mail, isSelf: false })),
-  )
-  const q = recipientSearch.value.trim().toLowerCase()
-  if (!q) return items
-  return items.filter(
-    (it) => it.name.toLowerCase().includes(q) || it.mail.toLowerCase().includes(q),
-  )
-})
-
-const recipientCount = computed(
-  () => props.recipients.filter((r) => r.selected).length + (props.selfSelected ? 1 : 0),
-)
 
 function toggleItem(item: RecipientItem) {
   if (item.isSelf) emit('toggle-self')

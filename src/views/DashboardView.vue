@@ -14,20 +14,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 import { useAccount } from '@/queries/useAccount'
 import { useDocuments } from '@/queries/useDocuments'
 import { deleteDocument, sendMail, type Document } from '@/api/documents'
 import { downloadTextFile } from '@/lib/download'
+import { buildArchiveReceipt } from '@/lib/receipt'
+import { computeArchiveStats } from '@/lib/archiveStats'
 import { formatDate } from '@/lib/formatDate'
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
@@ -73,12 +66,7 @@ const renewalDate = computed(() => {
 
 const archive = computed(() => {
   const acc = accountQuery.data.value
-  if (!acc) return null
-  return {
-    usedGb: (acc.archiveUsedMb / 1024).toFixed(1).replace('.', ','),
-    limitGb: Math.round(acc.archiveLimitMb / 1024),
-    percent: Math.min(100, Math.round((acc.archiveUsedMb / acc.archiveLimitMb) * 100)),
-  }
+  return acc ? computeArchiveStats(acc) : null
 })
 
 function pickFile() {
@@ -130,19 +118,7 @@ function downloadDocument(doc: Document) {
   // bytes, so what's downloadable is a receipt of the archived state, not a
   // copy of the original document. Mirrors exactly what DocumentCertificatePanel
   // displays, so the panel's "Download" button and this never drift apart.
-  const content = [
-    'İzİmza — Archive Record',
-    '',
-    `Belge: ${doc.name}`,
-    `Boyut: ${doc.sizeMb} MB`,
-    `Tarih: ${doc.date}`,
-    `Durum: ${doc.status}`,
-    `Belge No: #${doc.id}`,
-    'Özet algoritması: SHA-256',
-    'Standart: RFC 3161',
-    '',
-  ].join('\n')
-  downloadTextFile(`${doc.name}.arsiv.txt`, content)
+  downloadTextFile(`${doc.name}.arsiv.txt`, buildArchiveReceipt(doc))
   pushToast(t('dashboard.toasts.downloaded', { name: doc.name }), { tone: 'success' })
 }
 
@@ -433,26 +409,19 @@ function confirmDelete() {
       </div>
     </div>
 
-    <AlertDialog v-model:open="deleteDialogOpen">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{{ t('dashboard.deleteDialog.title') }}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {{ t('dashboard.deleteDialog.description', { name: deleteTarget?.name ?? '' }) }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel :disabled="deleting">{{
-            t('common.actions.discard')
-          }}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" :disabled="deleting" @click="confirmDelete">
-            {{
-              deleting ? t('dashboard.deleteDialog.deleting') : t('dashboard.deleteDialog.confirm')
-            }}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="deleteDialogOpen"
+      :title="t('dashboard.deleteDialog.title')"
+      :description="t('dashboard.deleteDialog.description', { name: deleteTarget?.name ?? '' })"
+      :cancel-label="t('common.actions.discard')"
+      :confirm-label="
+        deleting ? t('dashboard.deleteDialog.deleting') : t('dashboard.deleteDialog.confirm')
+      "
+      destructive
+      :confirm-disabled="deleting"
+      :cancel-disabled="deleting"
+      @confirm="confirmDelete"
+    />
 
     <DocumentCertificatePanel
       :document="certificateDoc"

@@ -8,6 +8,8 @@ import { useQueryClient } from '@tanstack/vue-query'
 import { otpLength, recipients as recipientSeed } from '@/data/mockData'
 import { sendOtpCode, verifyOtpCode, OtpExpiredError, OtpInvalidError } from '@/api/otp'
 import { downloadTextFile } from '@/lib/download'
+import { buildTimestampReceipt } from '@/lib/receipt'
+import { formatBytes, inferDocType } from '@/lib/file'
 import { maskPhone } from '@/lib/phone'
 import {
   totalCost as computeTotalCost,
@@ -17,38 +19,17 @@ import {
 import { useToast } from '@/composables/useToast'
 import { useCurrentUser } from '@/composables/useCurrentUser'
 import { useDropzone, hasAcceptedExtension } from '@/composables/useDropzone'
+import { useCountdown } from '@/composables/useCountdown'
 import { pendingUploadFiles } from '@/composables/usePendingUpload'
 import { useAccount } from '@/queries/useAccount'
 import { useProfile } from '@/queries/useProfile'
 import { useTimestampQueueStore, type QueueFile } from '@/stores/timestampQueue'
 import { useTimestampMutation } from '@/mutations/useTimestampMutation'
-import {
-  createDocument,
-  deleteDocument,
-  archiveDocument,
-  sendMail,
-  type RawDocType,
-} from '@/api/documents'
+import { createDocument, archiveDocument, sendMail } from '@/api/documents'
+import { cleanupOrphanedErrors } from '@/lib/orphanedDocuments'
 import TimestampCommitModal from '@/components/timestamp/TimestampCommitModal.vue'
 import FilePreviewSheet from '@/components/timestamp/FilePreviewSheet.vue'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
-
-function inferDocType(filename: string): RawDocType {
-  const ext = filename.split('.').pop()?.toLowerCase()
-  if (ext === 'docx' || ext === 'doc') return 'docx'
-  if (ext === 'xlsx' || ext === 'xls') return 'xlsx'
-  if (ext === 'png') return 'png'
-  return 'pdf'
-}
+import ConfirmDialog from '@/components/ui/ConfirmDialog.vue'
 
 // Stage 1 (file selection) stays inline and is driven by this same flow
 // value — 'idle' vs anything else. Stage 2 (commit: OTP through send) is
@@ -94,8 +75,13 @@ const fileInput = ref<HTMLInputElement | null>(null)
 const otp = ref<string[]>(Array(otpLength).fill(''))
 const otpError = ref('')
 const commitModalRef = ref<InstanceType<typeof TimestampCommitModal> | null>(null)
-const countdown = ref(0)
-let countdownTimer: number | null = null
+const {
+  seconds: countdown,
+  label: countdownLabel,
+  isExpired: isOtpExpired,
+  start: startCountdown,
+  stop: stopCountdown,
+} = useCountdown()
 let commitAbortController: AbortController | null = null
 
 const recipients = ref(recipientSeed.map((r) => ({ ...r })))
@@ -112,16 +98,6 @@ const remainingAfter = computed(() =>
   computeRemainingAfter(remainingCredits.value, totalCost.value),
 )
 const otpComplete = computed(() => otp.value.every((digit) => digit !== ''))
-const countdownLabel = computed(() => {
-  const m = Math.floor(countdown.value / 60)
-  const s = countdown.value % 60
-  return `${m}:${String(s).padStart(2, '0')}`
-})
-// Derived, not a separate Flow state — the OTP screen never navigates away
-// on expiry, it just changes what its own "resend" affordance looks like.
-// The client timer only drives this display; the real, authoritative
-// expiry decision happens server-side in verify() below.
-const isOtpExpired = computed(() => countdown.value <= 0)
 
 // Stage 2: every step from OTP through send/sent lives in the commit modal.
 // There is no separate "upload locked" flag any more — once one of these is
@@ -144,11 +120,6 @@ const isModalStep = computed(
 // across sessions. A computed sidesteps the ambiguity for good: no `as`/`|`
 // ever appears inside a template expression.
 const modalStep = computed(() => flow.value as 'otp' | 'result' | 'send' | 'sent')
-
-function formatBytes(bytes: number) {
-  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1).replace('.', ',')} MB`
-}
 
 function pickFile() {
   fileInput.value?.click()
@@ -238,17 +209,6 @@ function removeFile(id: number) {
   }
 }
 
-// A file whose createDocument() succeeded but whose timestamp mutation then
-// failed left a real, incomplete pending document server-side — since
-// these callers are abandoning it (not retrying), delete it so the server
-// never keeps a document with no corresponding local queue entry.
-function cleanupOrphanedErrors(files: QueueFile[]) {
-  files
-    .filter((f) => f.status === 'error' && f.documentId !== undefined)
-    .forEach((f) => {
-      deleteDocument(f.documentId!, { skipErrorToast: true }).catch(() => {})
-    })
-}
 
 const clearAllDialogOpen = ref(false)
 
@@ -263,29 +223,7 @@ function confirmClearAll() {
   clearAllDialogOpen.value = false
 }
 
-// Seeded from the server's own expiresAt (returned by sendOtpCode()), not
-// a locally-guessed duration — the visible countdown and the value the
-// server actually checks against can never disagree about when "now" is
-// relative to expiry, only about whether the interval below has ticked
-// down far enough yet to *show* it as expired.
-function startCountdown(expiresAt: number) {
-  stopCountdown()
-  countdown.value = Math.max(0, Math.round((expiresAt - Date.now()) / 1000))
-  countdownTimer = window.setInterval(() => {
-    countdown.value = Math.max(0, countdown.value - 1)
-    if (countdown.value <= 0) stopCountdown()
-  }, 1000)
-}
-
-function stopCountdown() {
-  if (countdownTimer !== null) {
-    window.clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-}
-
 onBeforeUnmount(() => {
-  stopCountdown()
   commitAbortController?.abort()
 })
 
@@ -490,18 +428,7 @@ function openSend() {
 function downloadResults() {
   const doneFiles = queue.value.filter((f) => f.status === 'done')
   for (const file of doneFiles) {
-    const content = [
-      'İzİmza — Zaman Damgalama Sertifikası',
-      '',
-      `Belge: ${file.name}`,
-      `Boyut: ${file.size}`,
-      'Zaman: 25.08.2026 15:41:07 +03',
-      'Özet algoritması: SHA-256',
-      'Standart: RFC 3161',
-      lastArchived.value ? 'Arşiv durumu: Arşivlendi' : 'Arşiv durumu: Arşivlenmedi',
-      '',
-    ].join('\n')
-    downloadTextFile(`${file.name}.damga.txt`, content)
+    downloadTextFile(`${file.name}.damga.txt`, buildTimestampReceipt(file, lastArchived.value))
   }
 }
 
@@ -1010,45 +937,30 @@ onBeforeUnmount(() => {
 
     <FilePreviewSheet :files="queue" :initial-index="previewIndex" @dismiss="closePreview" />
 
-    <AlertDialog v-model:open="clearAllDialogOpen">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{{ t('timestamp.clearDialog.title') }}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {{ t('timestamp.clearDialog.description', { count: queue.length }) }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>{{ t('common.actions.discard') }}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" @click="confirmClearAll">
-            {{ t('timestamp.clearDialog.confirm') }}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="clearAllDialogOpen"
+      :title="t('timestamp.clearDialog.title')"
+      :description="t('timestamp.clearDialog.description', { count: queue.length })"
+      :cancel-label="t('common.actions.discard')"
+      :confirm-label="t('timestamp.clearDialog.confirm')"
+      destructive
+      @confirm="confirmClearAll"
+    />
 
     <!-- v-model:open syncs leaveConfirmOpen to false however the dialog
          closes (button click, Escape, backdrop) — the watch() on it is the
          single place that actually resolves the pending navigation promise,
          so it always resolves exactly once regardless of which of those
          triggered the close. -->
-    <AlertDialog v-model:open="leaveConfirmOpen">
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{{ t('timestamp.leaveDialog.title') }}</AlertDialogTitle>
-          <AlertDialogDescription>
-            {{ t('timestamp.leaveDialog.description') }}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel @click="cancelLeave">{{
-            t('timestamp.leaveDialog.stay')
-          }}</AlertDialogCancel>
-          <AlertDialogAction variant="destructive" @click="confirmLeave">
-            {{ t('timestamp.leaveDialog.leave') }}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <ConfirmDialog
+      v-model:open="leaveConfirmOpen"
+      :title="t('timestamp.leaveDialog.title')"
+      :description="t('timestamp.leaveDialog.description')"
+      :cancel-label="t('timestamp.leaveDialog.stay')"
+      :confirm-label="t('timestamp.leaveDialog.leave')"
+      destructive
+      @confirm="confirmLeave"
+      @cancel="cancelLeave"
+    />
   </div>
 </template>
