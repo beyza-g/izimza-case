@@ -93,6 +93,13 @@
     outline: 2px solid oklch(var(--ring));
     outline-offset: 2px;
   }
+
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear,
+  input[type='password']::-webkit-credentials-auto-fill-button,
+  input[type='password']::-webkit-strong-password-auto-fill-button {
+    display: none !important;
+  }
 }
 
 @layer components {
@@ -104,11 +111,6 @@
       background-color 150ms ease,
       opacity 150ms ease,
       transform 100ms ease;
-  }
-
-  button:not(:disabled):active,
-  [role='button']:not(:disabled):active {
-    transform: scale(0.98);
   }
 
   @media (hover: hover) {
