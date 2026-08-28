@@ -33,7 +33,7 @@ function retry(toast: (typeof toasts)[number]) {
         <button
           v-if="toast.retry"
           type="button"
-          class="text-xs font-semibold text-primary mt-1.5"
+          class="text-xs font-semibold text-primary dark:text-foreground mt-1.5"
           @click="retry(toast)"
         >
           {{ t('common.actions.retry') }}

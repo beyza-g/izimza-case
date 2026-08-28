@@ -239,7 +239,7 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
                 type="tel"
                 inputmode="numeric"
                 placeholder="0(5XX) XXX-XXXX"
-                class="w-full bg-transparen outline-none"
+                class="w-full bg-transparent outline-none"
                 @input="onPhoneInput"
               />
               <input v-else v-model="fields[f.key]" class="w-full bg-transparent outline-none" />
@@ -272,7 +272,7 @@ const { onPhoneInput } = usePhoneInputMask((formatted) => {
             class="w-full text-[11.5px] leading-relaxed text-muted-foreground text-right max-w-[65ch] m-0"
           >
             {{ t('profile.kvkkText') }}
-            <a href="#" class="whitespace-nowrap text-primary hover:underline">{{
+            <a href="#" class="whitespace-nowrap text-primary dark:text-foreground hover:underline">{{
               t('profile.kvkkReadLink')
             }}</a>
           </p>

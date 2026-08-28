@@ -10,7 +10,7 @@ const authStore = useAuthStore()
     v-if="authStore.isLoading"
     class="min-h-screen flex items-center justify-center bg-background"
   >
-    <Loader2 class="w-6 h-6 text-primary animate-spin" />
+    <Loader2 class="w-6 h-6 text-primary dark:text-foreground animate-spin" />
   </div>
   <router-view v-else />
 </template>
