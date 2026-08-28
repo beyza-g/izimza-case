@@ -117,8 +117,23 @@ function onOpenChange(value: boolean) {
 
       <div class="flex items-start justify-between gap-4">
         <div>
-          <p class="text-lg font-semibold tracking-tight m-0 mb-1">
+          <p class="text-lg font-semibold tracking-tight m-0 mb-1 flex items-center gap-1.5">
             {{ t('profile.password.title') }}
+            <span class="relative group inline-flex">
+              <button
+                type="button"
+                class="w-4 h-4 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                :aria-label="t('profile.password.demoNotice')"
+              >
+                <Info class="w-3.5 h-3.5" />
+              </button>
+              <span
+                role="tooltip"
+                class="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 w-max max-w-[240px] whitespace-normal rounded-lg bg-foreground text-background text-[11px] font-normal leading-snug px-2.5 py-1.5 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-10 text-center"
+              >
+                {{ t('profile.password.demoNotice') }}
+              </span>
+            </span>
           </p>
           <p class="text-[13px] text-muted-foreground m-0">
             {{ t('profile.password.description') }}
@@ -142,7 +157,7 @@ function onOpenChange(value: boolean) {
             ref="currentPasswordInput"
             v-model="current"
             type="password"
-            class="w-full border rounded-[10px] px-3.5 py-3 text-sm"
+            class="w-full bg-transparent border rounded-[10px] px-3.5 py-3 text-sm"
             :class="
               currentPasswordError
                 ? 'border-destructive focus:border-destructive'
@@ -161,7 +176,7 @@ function onOpenChange(value: boolean) {
           <input
             v-model="next"
             type="password"
-            class="w-full border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
+            class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
           />
         </div>
         <div>
@@ -171,7 +186,7 @@ function onOpenChange(value: boolean) {
           <input
             v-model="confirm"
             type="password"
-            class="w-full border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
+            class="w-full bg-transparent border border-input rounded-[10px] px-3.5 py-3 text-sm focus:border-primary"
           />
         </div>
       </div>
@@ -181,7 +196,7 @@ function onOpenChange(value: boolean) {
         <div v-for="rule in rules" :key="rule.label" class="flex items-center gap-2.5">
           <span
             class="w-[15px] h-[15px] rounded-full flex items-center justify-center flex-none"
-            :class="rule.ok ? 'bg-success/15 text-success' : 'bg-border text-muted-foreground'"
+            :class="rule.ok ? 'bg-success/25 text-success' : 'bg-border text-muted-foreground'"
           >
             <Check v-if="rule.ok" class="w-2.5 h-2.5" />
             <X v-else class="w-2.5 h-2.5" />
@@ -192,16 +207,15 @@ function onOpenChange(value: boolean) {
         </div>
       </div>
 
-      <div class="bg-muted rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-muted-foreground">
-        <Info class="w-3.5 h-3.5 flex-none mt-0.5" />
-        <span>{{ t('profile.password.demoNotice') }}</span>
-      </div>
-
       <div class="flex justify-end">
         <button
           type="button"
-          class="rounded-[10px] px-5 py-3 text-[13px] font-semibold transition-colors disabled:opacity-60"
-          :class="canSubmit ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'"
+          class="rounded-[10px] px-5 py-3 text-[13px] font-semibold transition-colors"
+          :class="
+            canSubmit
+              ? 'bg-accent text-accent-foreground disabled:opacity-60'
+              : 'bg-muted text-muted-foreground'
+          "
           :disabled="!canSubmit || submitting"
           @click="submit"
         >
