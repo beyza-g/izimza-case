@@ -57,7 +57,7 @@ const recipientSearch = defineModel<string>('recipientSearch', { default: '' })
 
 const searchInputEl = ref<HTMLInputElement | null>(null)
 
-const { otpRefs, onOtpInput, onOtpKeydown, focusFirst } = useOtpDigitInput(otp)
+const { otpRefs, onOtpInput, onOtpKeydown, onOtpFocus, focusFirst } = useOtpDigitInput(otp)
 
 function focusSearch() {
   nextTick(() => searchInputEl.value?.focus())
@@ -192,6 +192,7 @@ function triggerPrimaryAction() {
         }"
         @input="onOtpInput(i, $event)"
         @keydown="onOtpKeydown(i, $event)"
+        @focus="onOtpFocus"
       />
     </div>
     <div class="flex items-center gap-1.5 text-xs">

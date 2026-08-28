@@ -20,10 +20,13 @@ export function useOtpDigitInput(otp: Ref<string[]>) {
       otpRefs.value[index - 1]?.focus()
     }
   }
+  function onOtpFocus(event: FocusEvent) {
+    ;(event.target as HTMLInputElement).select()
+  }
 
   function focusFirst() {
     nextTick(() => otpRefs.value[0]?.focus())
   }
 
-  return { otpRefs, onOtpInput, onOtpKeydown, focusFirst }
+  return { otpRefs, onOtpInput, onOtpKeydown, onOtpFocus, focusFirst }
 }
