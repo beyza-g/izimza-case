@@ -277,6 +277,28 @@ SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
 | 30 | A debug "Hata simüle et" trigger could plausibly leak into a production build | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check |
 | 31 | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused | Deleted — confirmed zero imports anywhere |
 
+### Code quality & duplication cleanup
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 32 | `formatBytes`/`inferDocType` (`TimestampView.vue`), the archive-usage % calc (`DashboardView.vue`), and orphaned-error cleanup (`TimestampView.vue`) were pure logic buried inline in view components | Extracted to `src/lib/`: `file.ts`, `archiveStats.ts`, `orphanedDocuments.ts` |
+| 33 | The password-rule regexes were duplicated verbatim between the Zod schema and the live checklist in `ChangePasswordModal.vue` | Both now import the same regexes/`getPasswordRules()` from `src/lib/passwordRules.ts` |
+| 34 | Countdown-timer, OTP-digit-input, and recipient-selection logic were hand-rolled inline in `TimestampView.vue`/`CommitModalContent.vue`, and the phone-input caret-preservation logic inline in `ProfileView.vue` | Extracted to composables: `useCountdown`, `useOtpDigitInput`, `useRecipientSelection`, `usePhoneInputMask` |
+| 35 | Dashboard's `downloadDocument()` and Timestamp's `downloadResults()` built near-identical receipt text independently | Shared `buildArchiveReceipt()`/`buildTimestampReceipt()` in `src/lib/receipt.ts` |
+| 36 | Dashboard's delete confirmation, Timestamp's clear-queue confirmation, and Timestamp's leave-page confirmation each hand-rolled the same `AlertDialog` markup | `ConfirmDialog.vue` — a shared wrapper over the AlertDialog primitives, used by all three |
+
+- **Extraction, not a rewrite**: every item above was verified to leave component
+  behavior and render output unchanged — checked against `type-check`/`lint`/`build`
+  plus a manual pass through each affected flow (receipt download, OTP
+  countdown/expiry, the password checklist, recipient search, all three
+  confirmation dialogs) before and after. Each confirmation site's own
+  logic (Dashboard's race-safe delete guard, the leave-confirmation's
+  Promise-based flow) was left untouched — only the markup moved into
+  `ConfirmDialog.vue`. See UX_DECISIONS.md → Architecture for the full
+  reasoning, and for why the *flow orchestration itself*
+  (`idle→ready→otp→result→send`) was deliberately left unsplit while these
+  narrower pieces were extracted.
+
 ### Explicitly deferred / out of scope
 
 - Toast-stacking when several retries fail back-to-back (cosmetic noise,
