@@ -1,14 +1,23 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { Check, X } from 'lucide-vue-next'
+import { computed, ref } from 'vue'
+import { Check, Info, X } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import { z } from 'zod'
 import { useI18n } from 'vue-i18n'
+import { DialogTitle, VisuallyHidden } from 'reka-ui'
 import { useQueryClient } from '@tanstack/vue-query'
 import { updatePassword } from '@/api/security'
 import { useSecurity } from '@/queries/useSecurity'
 import { useToast } from '@/composables/useToast'
+import { Dialog, DialogContent } from '@/components/ui/dialog'
+import {
+  PASSWORD_MIN_LENGTH,
+  PASSWORD_UPPER_REGEX,
+  PASSWORD_LOWER_REGEX,
+  PASSWORD_DIGIT_REGEX,
+  getPasswordRules,
+} from '@/lib/passwordRules'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -22,10 +31,10 @@ const passwordSchema = computed(() =>
       current: z.string().min(1, t('common.requiredField')),
       next: z
         .string()
-        .min(8, t('profile.password.rules.minLength'))
-        .regex(/[A-ZÇĞİÖŞÜ]/, t('profile.password.rules.upper'))
-        .regex(/[a-zçğıöşü]/, t('profile.password.rules.lower'))
-        .regex(/\d/, t('profile.password.rules.digit')),
+        .min(PASSWORD_MIN_LENGTH, t('profile.password.rules.minLength'))
+        .regex(PASSWORD_UPPER_REGEX, t('profile.password.rules.upper'))
+        .regex(PASSWORD_LOWER_REGEX, t('profile.password.rules.lower'))
+        .regex(PASSWORD_DIGIT_REGEX, t('profile.password.rules.digit')),
       confirm: z.string(),
     })
     .refine((data) => data.confirm.length > 0 && data.next === data.confirm, {
@@ -52,20 +61,16 @@ const { pushToast } = useToast()
 const securityQuery = useSecurity()
 const queryClient = useQueryClient()
 
-onMounted(() => {
+// reka-ui's DialogContent (via FocusScope) auto-focuses the first tabbable
+// element on open, which would be the close (X) button since it precedes
+// the current-password input in DOM order. Prevent that default and focus
+// the current-password input ourselves, matching the pre-migration behavior.
+function onOpenAutoFocus(event: Event) {
+  event.preventDefault()
   currentPasswordInput.value?.focus()
-})
+}
 
-const rules = computed(() => [
-  { label: t('profile.password.rules.minLength'), ok: values.next.length >= 8 },
-  { label: t('profile.password.rules.upper'), ok: /[A-ZÇĞİÖŞÜ]/.test(values.next) },
-  { label: t('profile.password.rules.lower'), ok: /[a-zçğıöşü]/.test(values.next) },
-  { label: t('profile.password.rules.digit'), ok: /\d/.test(values.next) },
-  {
-    label: t('profile.password.rules.match'),
-    ok: values.next.length > 0 && values.next === values.confirm,
-  },
-])
+const rules = computed(() => getPasswordRules(values.next, values.confirm, t))
 
 const canSubmit = computed(() => rules.value.every((r) => r.ok) && values.current.length > 0)
 
@@ -89,17 +94,27 @@ const submit = handleSubmit(async (formValues) => {
     submitting.value = false
   }
 })
+
+// This component only exists while its parent's v-if is true, so its own
+// lifetime already represents "open" — reka-ui's own Escape/outside-click
+// detection is what can trigger update:open(false) here, which we just
+// forward as the same 'close' this component already emitted for its old
+// hand-rolled backdrop/@keydown.esc.
+function onOpenChange(value: boolean) {
+  if (!value) emit('close')
+}
 </script>
 
 <template>
-  <div
-    class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
-    @click.self="$emit('close')"
-    @keydown.esc="$emit('close')"
-  >
-    <div
-      class="w-full max-w-[440px] bg-card border border-border rounded-2xl p-7 flex flex-col gap-4 shadow-2xl"
+  <Dialog :open="true" @update:open="onOpenChange">
+    <DialogContent
+      class="max-w-[440px] bg-card p-7 flex flex-col gap-4"
+      @open-auto-focus="onOpenAutoFocus"
     >
+      <DialogTitle as-child>
+        <VisuallyHidden>{{ t('profile.password.title') }}</VisuallyHidden>
+      </DialogTitle>
+
       <div class="flex items-start justify-between gap-4">
         <div>
           <p class="text-lg font-semibold tracking-tight m-0 mb-1">
@@ -177,6 +192,11 @@ const submit = handleSubmit(async (formValues) => {
         </div>
       </div>
 
+      <div class="bg-muted rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-muted-foreground">
+        <Info class="w-3.5 h-3.5 flex-none mt-0.5" />
+        <span>{{ t('profile.password.demoNotice') }}</span>
+      </div>
+
       <div class="flex justify-end">
         <button
           type="button"
@@ -188,6 +208,6 @@ const submit = handleSubmit(async (formValues) => {
           {{ submitting ? t('profile.password.changing') : t('profile.password.title') }}
         </button>
       </div>
-    </div>
-  </div>
+    </DialogContent>
+  </Dialog>
 </template>
