@@ -3,18 +3,7 @@
 > For the detailed catalog of UX/architecture decisions,
 > see [UX_DECISIONS.md](./UX_DECISIONS.md).
 
-## Test Account
-
-> **Email:** demo@izimza-case.com
-> **Password:** Demo-izimza12@!
-
-## Timestamping — Verification Code
-
-> The mock environment never sends a real SMS to a phone. On the OTP
-> screen, the fixed code for a successful verification is: **444444**
->
-> (Entering an incorrect code triggers the error scenario, useful for
-> testing the real OTP flow's failure path.)
+## Overview
 
 A rebuild of portal.izimza.com's existing UI, treated as a wireframe, for an
 İzometri recruiting case study — modern UI/UX plus a frontend
@@ -22,6 +11,16 @@ architecture. Built on Vue 3 + TypeScript (strict); talks to a mock backend
 over real HTTP (json-server), authenticates via Auth0 (Authorization Code +
 PKCE), manages server state/caching with TanStack Query, and validates forms
 with schema-based Vee-Validate + Zod.
+
+## Getting Started
+
+> **Test account — Email:** demo@izimza-case.com
+> **Password:** Demo-izimza12@!
+
+> **Timestamping OTP code:** the mock environment never sends a real SMS.
+> On the OTP screen, the fixed code for a successful verification is
+> **444444**. Any other code triggers the error path, useful for testing
+> OTP failure handling.
 
 ## Setup
 
@@ -61,11 +60,11 @@ npm run type-check   # vue-tsc --build
 ## Pages / Routes
 
 | Route        | Page                                   | Content                                                                                                               |
-| ------------ | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| ------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
 | `/dashboard` | Anasayfa (Home)                        | Stat cards, upload zone, recently archived documents table                                                            |
 | `/timestamp` | Zaman Damgala (Timestamp)              | File upload → OTP verification → timestamping result, driven by a single state machine (`idle→ready→otp→result→send`) |
 | `/profile`   | Ayarlar · Profil & Güvenlik (Settings) | Profile form (Zod-validated), change-password modal, session management                                               |
-| `/callback`  | —                                      | Auth0 PKCE redirect callback; never seen by the user, only used to complete login                                     |
+| `/callback`  | —                                       | Auth0 PKCE redirect callback; never seen by the user, only used to complete login                                     |
 
 Every route except `/callback` is marked `meta.requiresAuth: true` and
 protected in `router.beforeEach` via `@auth0/auth0-vue`'s `authGuard`
@@ -94,242 +93,205 @@ See [Vite Configuration Reference](https://vite.dev/config/).
 
 ## Architecture decisions
 
-### Problem → solution
+Each table below is the "what" for one concern — one line per decision, file
+names as the pointer into the code. The prose underneath a table adds only
+what the table can't: the reasoning, a tradeoff, or verification evidence.
+For the full "why" behind every decision (grouped by user-facing concern
+instead of by build chronology), see
+[UX_DECISIONS.md](./UX_DECISIONS.md) — this section deliberately doesn't
+re-explain decisions that already have a dedicated row there.
 
-| #   | Problem                                                                                                                                                                                                                                                         | Solution                                                                                                                                                                                                                                                               |
-| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Console logging left in production                                                                                                                                                                                                                              | Stripped from the production build                                                                                                                                                                                                                                     |
-| 2   | Redundant network requests on every navigation                                                                                                                                                                                                                  | TanStack Query `staleTime`/cache instead of refetch-on-mount                                                                                                                                                                                                           |
-| 3   | REST-incorrect endpoints (POST used where GET/resource semantics apply)                                                                                                                                                                                         | Resource-oriented `json-server` API design                                                                                                                                                                                                                             |
-| 4   | Response-unwrapping logic duplicated ad hoc across call sites                                                                                                                                                                                                   | Centralized once in the axios interceptor (`unwrapResponse`)                                                                                                                                                                                                           |
-| 5   | Hand-rolling login/session/token-refresh is out of scope for a UI/UX case and risks reinventing security-critical code                                                                                                                                          | `@auth0/auth0-vue` (Authorization Code + PKCE); `authGuard` + the axios request interceptor are the only two integration points the rest of the app touches                                                                                                            |
-| 6   | Memory-only Auth0 token cache forced a fresh login on every navigation (third-party cookie restrictions break silent renewal)                                                                                                                                   | `cacheLocation: 'localstorage'` for this demo; noted as a prod tradeoff — memory-only + Custom Domain silent renewal would be preferred there                                                                                                                          |
-| 7   | An in-memory mock adapter never actually exercised the interceptor's 4xx/5xx branches, real request timing, or the Network tab                                                                                                                                  | Replaced with a real `json-server` HTTP process (`mock-data/db.json` + a custom middleware for deterministic 422/500 routes); pinned to `json-server@^0.17.4` since 1.x dropped the `--watch`/`--middlewares` flags this relies on                                     |
-| 8   | Credit balance lived in two places (a `wallet.ts` Pinia store and the account query response) — a dual-source-of-truth that goes stale after a mutation                                                                                                         | Removed `wallet.ts`; `useAccount()` (TanStack Query cache) is the single source for server-derived numbers, Pinia reserved for client-only state (auth, theme)                                                                                                         |
-| 9   | Concurrent retry mutations (`retryAllErrors()`) could both read the same pre-decrement account-cache snapshot inside `onMutate` and clobber each other's optimistic credit deduction                                                                            | Rewritten from concurrent `.forEach` to sequential `for...of` + `await`; verified against a real multi-file retry over json-server                                                                                                                                     |
-| 10  | Vite's file watcher picked up every real write `json-server` made to `db.json`, triggering an HMR reload that silently wiped in-progress `TimestampView` state (upload queue, current step)                                                                     | Moved `db.json`/`mockMiddleware.cjs` to a root-level `mock-data/` dir and added `server.watch.ignored: ['**/mock-data/**']` to `vite.config.ts`                                                                                                                        |
-| 11  | Neither the upload loop nor the OTP `verify()` commit loop could be cancelled — navigating away left requests running in the background, and a stray `setTimeout` wasn't cleared on unmount                                                                     | `AbortController` threaded through both loops and into `useTimestampMutation`'s `mutationFn`; the axios interceptor treats `axios.isCancel(error)` as a silent reject, not a network-error toast                                                                       |
-| 12  | A new file upload could silently mix into an in-flight OTP verification batch, producing an inconsistent queue/credit state                                                                                                                                     | New uploads blocked in the upload handlers themselves once "Zaman damgala" is clicked, until the round completes or is abandoned                                                                                                                                       |
-| 13  | Organic random mock failures (`failRate`) made the timestamp demo flow non-deterministic; TanStack Query's own retry raced with axios's retry-toast, producing duplicate retry attempts; `Skeleton.vue` violated the `vue/multi-word-component-names` lint rule | `failRate` zeroed (errors now only via the explicit debug trigger); `retry: false` added to every query; renamed to `SkeletonBlock.vue`                                                                                                                                |
-| 14  | `vee-validate` and `zod` were project dependencies but zero files actually imported them — Profile and the password-change modal used hand-rolled reactive validation instead                                                                                   | Wired real Zod schemas (`toTypedSchema` + `useForm`/`defineField`) into both forms; found and fixed during this project's own mandatory-requirements audit                                                                                                             |
-| 15  | The stated stack (see project notes, and the design tokens' own shadcn-style naming) never actually went through a `shadcn-vue init` — hand-authored `src/components/ui/*.vue` diverged from the intended library                                               | Installed `shadcn-vue`, scoped to the dropdown-menu/alert-dialog components the archived-documents action menu needed                                                                                                                                                  |
-| 16  | shadcn-vue's CLI (2.8.x) generates Tailwind v4-only syntax (`data-open:`, `w-(--css-var)`, `not-*`/`**:`, `outline-hidden`) and v4-only CSS imports (`@theme`/`@utility`) that silently produced zero working CSS under this project's Tailwind v3              | Every generated component's classes hand-ported to v3 bracket syntax; `tw-animate-css` swapped for the real v3 plugin `tailwindcss-animate`; verified via a production build's compiled `@keyframes enter`/`animate-in` CSS                                            |
-| 17  | The CLI's icon-library flag installed a second, scoped `@lucide/vue` package alongside the project's existing `lucide-vue-next`                                                                                                                                 | Deleted the two generated files that needed it, uninstalled `@lucide/vue`, kept `lucide-vue-next` as the single icon source                                                                                                                                            |
-| 18  | Generated `Button.vue`/`buttonVariants` had its own radius/padding scale, diverging visually from every hand-built button already in the app                                                                                                                    | Deleted the generated Button component; restyled `AlertDialogAction`/`AlertDialogCancel` with the app's existing button vocabulary                                                                                                                                     |
-| 19  | A pre-existing `oxlint`/`eslint-plugin-oxlint` peer-dependency conflict made every `shadcn-vue add` (and any plain `npm install`) fail outright                                                                                                                 | Added `.npmrc` with `legacy-peer-deps=true`                                                                                                                                                                                                                            |
-| 20  | A debug "Hata simüle et" trigger could plausibly leak into a production build and read as unfinished to an evaluator                                                                                                                                            | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check                                                                                                                                                            |
-| 21  | The floating user-card popover (`AppUserCard`/`AppUserPopover`) had click-outside/close-on-scroll but no Escape-to-close                                                                                                                                        | Added a document-level `keydown` listener closing the popover on `Escape`                                                                                                                                                                                              |
-| 22  | The 6 OTP digit inputs had no `aria-label`, so screen readers announced nothing per digit                                                                                                                                                                       | Added `aria-label="{n}. hane"` per input                                                                                                                                                                                                                               |
-| 23  | Toast notifications had no live region, so screen reader users weren't informed when one appeared                                                                                                                                                               | Added `role="status"` + `aria-live="polite"` to the toast container                                                                                                                                                                                                    |
-| 24  | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused in the codebase                                                                                                                                                                     | Deleted — confirmed zero imports anywhere                                                                                                                                                                                                                              |
-| 25  | All UI copy was hardcoded Turkish, with no path to a second language                                                                                                                                                                                            | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, `locale` persisted to `localStorage` mirroring `useTheme.ts`'s own pattern; status-badge/nav labels moved to key-based display mappings kept separate from the `documents.ts` anti-corruption layer |
-| 26  | The real app splits its API across a separate subdomain per feature with inconsistent casing (e.g. `profileapi.izimza.com/api/Dashboard/...`) — no single, predictable resource surface                                                                         | One base URL (`json-server` on `:3001`), flat and consistently-cased resource naming (`/documents`, `/account`, `/profile`, …)                                                                                                                                         |
-| 27  | Content pops in abruptly after the page finishes loading, shifting the layout underneath it (no placeholder holds the eventual space)                                                                                                                           | `SkeletonBlock.vue` — a shimmer-animated block sized to match its eventual content, used wherever data is still loading (e.g. `StatCard.vue`, the dashboard's stat row)                                                                                                |
-| 28  | Dashboard's "Sign now" card promised drag-and-drop copy with zero event handlers wired, and has no processing pipeline of its own since Sign isn't implemented — a valid drop there was a dead end                                                              | Real drag/drop handling shared with Timestamp's own dropzone (`useDropzone.ts`, one file-acceptance path, not two); a dropped/selected file is routed to the working Timestamp queue instead of discarded — see below                                                  |
-| 29  | No way to check a queued file is the right one before spending a credit on it                                                                                                                                                                                    | `FilePreviewSheet.vue` — a right-side sheet (per-row preview button) renders the file's own `File` object (`URL.createObjectURL`) natively for PDF/PNG, with a thumbnail strip to page between every queued file and a plain fallback for unsupported types; preview-only, and only for the pre-commit queue (see note below) |
-| 30  | A literal file preview for Dashboard/Archive's historical documents would show fake content — the mock backend never stored real bytes for them in the first place                                                                                              | `DocumentCertificatePanel.vue` — a genuine-metadata certificate (name, type, size, date, status badge, hash algorithm/standard labels) with a real downloadable text receipt, plus an always-visible in-UI notice that this isn't the original file                            |
+### Data layer & mock backend
 
-The rest of this section covers the most consequential of these in more depth.
+| # | Problem | Solution |
+| --- | --- | --- |
+| 1 | Redundant network requests on every navigation | TanStack Query `staleTime`/cache instead of refetch-on-mount |
+| 2 | REST-incorrect endpoints (POST used where GET/resource semantics apply) | Resource-oriented `json-server` API design |
+| 3 | Response-unwrapping logic duplicated ad hoc across call sites | Centralized once in the axios interceptor (`unwrapResponse`) |
+| 4 | An in-memory mock adapter never exercised real HTTP timing or the interceptor's 4xx/5xx branches | Real `json-server` HTTP process, pinned to `^0.17.4` for its `--watch`/`--middlewares` flags |
+| 5 | Credit balance lived in two places (`wallet.ts` Pinia store + the account query) — dual source of truth | Removed `wallet.ts`; `useAccount()` (TanStack Query cache) is the single source |
+| 6 | Concurrent retry mutations (`retryAllErrors()`) could clobber each other's optimistic credit deduction | Rewritten from concurrent `.forEach` to sequential `for...of` + `await` |
+| 7 | Vite's watcher picked up every write `json-server` made to `db.json`, wiping in-progress Timestamp state via HMR | Moved mock files to root-level `mock-data/`, added `server.watch.ignored` in `vite.config.ts` |
+| 8 | Random mock failures (`failRate`) made the demo non-deterministic; TanStack retry raced axios's retry-toast | `failRate` zeroed; `retry: false` added to every query |
+| 9 | The real app splits its API across inconsistent per-feature subdomains | One base URL, flat and consistently-cased resource naming |
 
-- **Internationalization (vue-i18n, localStorage-persisted, no URL prefixing)**:
-  URL-based locale prefixing (`/en`, `/tr`) deliberately skipped — no SSR/SEO
-  surface exists behind auth, localStorage persistence is sufficient.
-
-- **Anti-patterns identified in the current portal.izimza.com, mapped to fixes**:
-  audited the existing product before rebuilding it and treated six concrete
-  anti-patterns as the spine of the architecture rather than as an afterthought —
-  console logging left in production (stripped from the build), redundant
-  network requests on every navigation (TanStack Query `staleTime`/cache instead
-  of refetch-on-mount), REST-incorrect endpoints (POST used where GET/resource
-  semantics apply) replaced by a properly resource-oriented json-server API,
-  inconsistent ad hoc response-unwrapping scattered across call sites,
-  centralized into one axios interceptor (`unwrapResponse` in `http.ts`), a
-  per-feature subdomain split with inconsistent casing (e.g.
-  `profileapi.izimza.com/api/Dashboard/...`) replaced by one base URL and flat,
-  consistently-cased resource names, and content popping in post-load with no
-  placeholder holding its space, fixed with a shimmer-animated
-  `SkeletonBlock.vue` sized to the eventual content.
-
-- **Auth0 SPA SDK (Authorization Code + PKCE) instead of a hand-rolled auth**:
-  `@auth0/auth0-vue` was used instead of building custom login/session/token-
-  refresh logic, since the case is evaluated on UI/UX and architecture quality,
-  not on reimplementing password storage or session security from scratch. PKCE
-  avoids ever exposing a client secret in the browser, and offloads MFA/session/
-  refresh concerns to a battle-tested provider — the router guard (`authGuard`)
-  and axios's request interceptor are the only two integration points the rest
-  of the app needs to know about.
-
-- **Auth0 `cacheLocation: 'localstorage'`**: chosen for this demo/case
-  environment because third-party cookie restrictions make silent session
-  renewal unreliable in memory-only mode — every navigation was forcing a
-  fresh login. In production, memory-only caching plus silent iframe renewal
-  via an Auth0 Custom Domain would be preferred instead.
+See UX_DECISIONS.md → Architecture for the full reasoning behind #1, #3, #5
+(staleTime/retry strategy, the axios interceptor layer, and the
+single-source-of-truth call), which aren't re-explained here.
 
 - **Mock backend evolution: hand-rolled axios adapter → a real `json-server`
-  process**: the first mock layer intercepted requests in-memory and faked
-  responses, which meant the interceptor's 4xx/5xx branches, the Network tab,
-  and real request/response timing were never actually exercised — undermining
-  the point of demonstrating the data-layer architecture at all. Switched to a
-  genuine `json-server` HTTP process (`mock-data/db.json` + a small custom
-  middleware for deterministic `422`/`500` routes) so every request in the app
-  is real HTTP; `json-server` is pinned to `^0.17.4` specifically because `1.x`
-  dropped the `--watch`/`--middlewares` CLI flags this setup relies on.
+  process**: the first mock layer faked responses in-memory, so the
+  interceptor's error branches and real request timing were never actually
+  exercised. `json-server` is pinned to `^0.17.4` specifically because `1.x`
+  dropped the `--watch`/`--middlewares` flags this setup relies on.
 
-- **Removed the separate `wallet.ts` Pinia store — `useAccount()` is now the
-  single source of truth for credit balance**: credits used to live in both a
-  client-side Pinia store and the account query response, which is exactly the
-  dual-source-of-truth shape that goes stale after a mutation. Server-derived
-  numbers like remaining credits now live exclusively in the TanStack Query
-  cache; Pinia is reserved for genuinely client-only state (auth, theme).
+- **`retryAllErrors()` rewritten to sequential `for...of` + `await`**: firing
+  all failed files' retries concurrently let two in-flight retries both read
+  the same pre-decrement account-cache snapshot inside `onMutate`, clobbering
+  each other's optimistic credit deduction. Verified against a real
+  multi-file retry over json-server, confirming a non-overlapping network
+  timeline.
 
-- **`retryAllErrors()` rewritten from concurrent `.forEach` to sequential
-  `for...of` + `await`**: the original implementation fired all failed files'
-  retry mutations concurrently, so two in-flight retries could both read the
-  same pre-decrement account-cache snapshot inside `onMutate` and clobber each
-  other's optimistic credit deduction. Verified against a real multi-file retry
-  scenario over json-server, confirming a non-overlapping network timeline.
+- **`db.json`/`mockMiddleware.cjs` moved out of `src/` and excluded from
+  Vite's watcher**: moving the files to `mock-data/` alone wasn't enough —
+  Vite watches the whole project root, not just `src/` — so
+  `server.watch.ignored: ['**/mock-data/**']` had to be added too.
 
-- **Moved `db.json`/`mockMiddleware.cjs` out of `src/` and excluded them from
-  Vite's watcher**: every real write `json-server` made to `db.json` was being
-  picked up by Vite's file watcher, triggering an HMR reload of
-  `TimestampView.vue` that silently wiped in-progress local state (upload
-  queue, current panel step) mid-flow. Moving the files to a root-level
-  `mock-data/` directory alone wasn't enough — Vite watches the whole project
-  root, not just `src/` — so `server.watch.ignored: ['**/mock-data/**']` had to
-  be added to `vite.config.ts` as well.
+### Auth
 
-- **AbortController wiring for the upload and OTP-verification loops**: neither
-  the file-upload loop nor `verify()`'s sequential commit loop in
-  `TimestampView.vue` could be cancelled — navigating away mid-flow left
-  requests running to completion in the background with no way to stop them,
-  and a stray `setTimeout` in `finishAndReset` wasn't cleared on unmount
-  either. Threaded an `AbortController` through both loops and into
-  `useTimestampMutation`'s `mutationFn`, and taught the axios response
-  interceptor to treat `axios.isCancel(error)` as a silent reject instead of a
-  network-error toast, since a deliberate cancellation isn't a failure.
+| # | Problem | Solution |
+| --- | --- | --- |
+| 10 | Hand-rolling login/session/token-refresh is out of scope for a UI/UX case and risks reinventing security-critical code | `@auth0/auth0-vue` (Authorization Code + PKCE) |
+| 11 | Memory-only Auth0 token cache forced a fresh login on every navigation (third-party cookie restrictions break silent renewal) | `cacheLocation: 'localstorage'` for this demo; noted as a prod tradeoff |
 
-- **New uploads locked during active OTP verification**: once "Zaman damgala"
-  is clicked, new file uploads are blocked until the round either completes
-  (`result`) or is abandoned (`Vazgeç`) — enforced in the upload handlers
-  themselves, not just visually, since a new file silently mixing into an
-  in-flight verification batch would produce an inconsistent queue/credit
-  state.
+- **Auth0 SPA SDK instead of a hand-rolled auth**: the case is evaluated on
+  UI/UX and architecture quality, not on reimplementing password storage or
+  session security from scratch. PKCE avoids ever exposing a client secret in
+  the browser; `authGuard` (router) and the axios request interceptor are the
+  only two integration points the rest of the app needs to know about.
 
-- **Small fixes made along the way, not explicitly requested**: zeroed the mock
-  API's random `failRate` (organic, non-deterministic failures on the
-  timestamp button made the demo flow unreliable — errors are now only
-  reproducible via the explicit debug trigger); added `retry: false` to every
-  TanStack Query so it wouldn't silently retry underneath axios's own
-  retry-toast, which was producing duplicate retry attempts; and renamed
-  `Skeleton.vue` → `SkeletonBlock.vue` to satisfy the
-  `vue/multi-word-component-names` lint rule.
+- **`cacheLocation: 'localstorage'`**: chosen because third-party cookie
+  restrictions make silent session renewal unreliable in memory-only mode —
+  every navigation was forcing a fresh login. In production, memory-only
+  caching plus silent iframe renewal via an Auth0 Custom Domain would be
+  preferred instead.
 
-- **Accessibility — audited and partially remediated, not a full WCAG pass**:
-  focus-on-open plus Escape-to-close already existed on `ChangePasswordModal`;
-  `AlertDialog`/`DropdownMenu` get Escape, focus-trapping, and outside-click
-  for free from reka-ui's built-in `DismissableLayer`/`FocusScope`
-  primitives; the OTP bottom sheet already had `role="dialog"`,
-  `aria-modal="true"`, and Escape-to-close. A consistency audit of this
-  project found and fixed three remaining gaps: the sidebar's user-card
-  popover (`AppUserCard`/`AppUserPopover`) had click-outside and
-  close-on-scroll but no Escape handling (added a document-level `keydown`
-  listener); the six OTP digit inputs had no `aria-label` for screen readers
-  (added `aria-label="{n}. hane"` per input); and toast notifications had no
-  live region (added `role="status"` + `aria-live="polite"`). What's still
-  genuinely missing: neither hand-rolled overlay (`ChangePasswordModal`, the
-  user popover) has a dedicated focus-trap library, so `Tab` can still cycle
-  out to the page behind them — this is a known, scoped gap, not a full WCAG
-  audit.
+### Forms & validation
 
-- **Explicitly deferred / out of scope**: toast-stacking when several retries
-  fail back-to-back (cosmetic noise, flagged but not fixed); the
-  `Sign`/`Archive`/`Document Management` nav destinations and three unimplemented
-  Profile sub-tabs (visual stubs only — not covered by the source design
-  file); and the full Vitest suite — this is a deliberate scope call, not an
-  oversight: the case brief lists automated tests as optional, and the time
-  budget instead went to the mandatory requirements (Auth0, real HTTP,
-  Zod-schema validation) and to this project's own consistency audit.
+| # | Problem | Solution |
+| --- | --- | --- |
+| 12 | `vee-validate`/`zod` were dependencies but unused — Profile and the password modal used hand-rolled reactive validation | Wired real Zod schemas (`toTypedSchema` + `useForm`/`defineField`) into both forms |
 
-- **Dashboard's "Sign now" card redirects a dropped/selected document into
-  the Timestamp flow, not a Sign flow**: the card promises drag-and-drop
-  ("...drag here or choose from your computer"), but since Sign is one of
-  the deliberately out-of-scope nav stubs above, there is no Sign pipeline
-  for an accepted file to join. Rather than a dead-end drop, the file is
-  handed off (`usePendingUpload.ts`) to the one flow that's actually
-  implemented and working — Timestamp — with a toast shown first
+Found and fixed during this project's own mandatory-requirements audit.
+
+### Timestamp flow
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 13 | Neither the upload loop nor the OTP `verify()` commit loop could be cancelled; a stray `setTimeout` wasn't cleared on unmount either | `AbortController` threaded through both loops into `useTimestampMutation`'s `mutationFn` |
+| 14 | A new file upload could silently mix into an in-flight OTP verification batch, producing an inconsistent queue/credit state | New uploads blocked in the upload handlers themselves until the round completes or is abandoned |
+
+See UX_DECISIONS.md → Architecture for #13's full reasoning and its scope —
+it only covers this one flow, not every request in the app.
+
+- **New uploads locked during active OTP verification**: enforced in the
+  upload handlers themselves, not just visually, since a new file silently
+  mixing into an in-flight verification batch would produce an inconsistent
+  queue/credit state.
+
+### Document preview & certificates
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 15 | Dashboard's "Sign now" card promised drag-and-drop with no processing pipeline of its own (Sign isn't implemented) | Dropped/selected files routed into the working Timestamp queue instead (`useDropzone.ts`) |
+| 16 | No way to check a queued file is the right one before spending a credit on it | `FilePreviewSheet.vue` renders the file's own `File` object natively for PDF/PNG |
+| 17 | A literal preview for Dashboard/Archive's historical documents would show fake content — no real bytes are stored for them | `DocumentCertificatePanel.vue` — a genuine-metadata certificate plus a downloadable text receipt |
+
+- **Dashboard's "Sign now" card hands off to Timestamp, not a Sign flow**:
+  rather than a dead-end drop, the file is handed off (`usePendingUpload.ts`)
+  to the one flow that's actually implemented, with a toast shown first
   ("Document added to the Timestamp queue") so the redirect reads as an
-  explained outcome, not a silent jump away from the page the user was
-  just on. This is conceptually consistent with how a dropped file on the
-  real portal.izimza.com can be handed off from the context it was dropped
-  in to a different processing flow — it produces a meaningful result
-  instead of an empty "drop."
+  explained outcome, not a silent jump away from the page the user was just
+  on.
 
-- **Timestamp's queue gets a real content preview; Dashboard/Archive's
-  historical documents get a certificate, not a fake preview**: the
-  queue's `File` objects are real and still sit in the browser's own
-  memory, so `FilePreviewSheet.vue` renders actual PDF/PNG content
-  client-side because the mock backend never stores document bytes at
-  all (`mock-data/db.json` is metadata-only). The Timestamp queue offers
-  a full preview (PDF/image rendering, quick actions, keyboard
-  navigation) since real file content is available; Dashboard/Archive's
-  historical documents instead get a `DocumentCertificatePanel.vue`
-  generated from genuine metadata — since there is no real backing file
-  left to render there, showing one would be showing content that isn't
-  actually the document. The panel carries its own always-visible notice
-  ("this is a document certificate — the original file content isn't
-  stored in this demo environment") directly in the UI rather than only
-  in this README, so a viewer understands the limitation without having
-  to go looking for it.
+- **Timestamp's queue gets a real preview; Dashboard/Archive get a
+  certificate, not a fake preview**: the queue's `File` objects are real and
+  still in the browser's memory, so `FilePreviewSheet.vue` can render actual
+  content. Dashboard/Archive's historical documents have no backing file left
+  to render (`mock-data/db.json` is metadata-only), so
+  `DocumentCertificatePanel.vue` shows genuine metadata instead of faking a
+  preview — with an always-visible in-UI notice that this isn't the original
+  file, so a viewer understands the limitation without going looking for it.
 
-- **shadcn-vue installed later, for the row-actions menu, not from day one**: the
-  project's stated stack was "Tailwind + Shadcn Vue," and `src/assets/main.css`'s
-  design tokens were already authored in shadcn's own semantic naming convention
-  (`background`/`card`/`primary`/`border`/`ring`, etc.), but the original
-  implementation plan for this project never included a `shadcn-vue init` step —
-  it went straight to hand-authoring `src/components/ui/*.vue` files styled
-  directly off the source design's literal values. That reads as a gap
-  between the stated stack and what was actually planned, not a documented
-  decision to avoid the library. `shadcn-vue` was installed now, scoped to the
-  dropdown-menu/alert-dialog components the archived-documents action menu
-  needed, rather than retrofitted across already-working hand-built components.
+### Accessibility
 
-- **shadcn-vue's newest CLI (2.8.x) targets Tailwind v4; this project is pinned
-  to v3**: the generated `dropdown-menu`/`alert-dialog` components shipped with
-  Tailwind v4-only class syntax (bare `data-open:` variants, `w-(--css-var)`
-  parenthesis arbitrary values, `not-*`/`**:` combinators, `outline-hidden`) that
-  Tailwind v3's compiler can't parse — and the CLI's own `@import
-"shadcn-vue/tailwind.css"` plus its default `tw-animate-css` dependency are
-  both v4-only (`@theme`/`@utility` at-rules), which silently produced zero
-  working CSS under v3 (confirmed via a build with `tw-animate-css`: lightningcss
-  logged "Unknown at rule: @utility" and the `animate-in`/`fade-in-0` classes
-  never compiled). Every generated component's classes were hand-ported to v3
-  bracket syntax, and the animation dependency was swapped for
-  `tailwindcss-animate` — the actual Tailwind v3 plugin `tw-animate-css` was
-  built to replace — verified by grepping the production build's CSS for a real
-  `@keyframes enter` rule and a compiled `animate-in[data-state=open]` selector.
+| # | Problem | Solution |
+| --- | --- | --- |
+| 18 | The sidebar's user-card popover had click-outside/close-on-scroll but no Escape-to-close | Added a document-level `keydown` listener closing it on `Escape` |
+| 19 | The 6 OTP digit inputs had no `aria-label`, so screen readers announced nothing per digit | Added `aria-label="{n}. hane"` per input |
+| 20 | Toast notifications had no live region, so screen reader users weren't informed when one appeared | Added `role="status"` + `aria-live="polite"` to the toast container |
 
-- **`@lucide/vue` was pulled in by the CLI, then removed**: the icon-library flag
-  passed to `shadcn-vue init` made it install the newer scoped `@lucide/vue`
-  package for the generated components' internal icons, which would have meant
-  two parallel Lucide packages in the project. Deleted the two unused generated
-  files that needed it (`DropdownMenuCheckboxItem`, `DropdownMenuSubTrigger`) and
-  uninstalled the package instead, keeping `lucide-vue-next` as the single icon
-  source everywhere, including inside the new menu.
+Audited and partially remediated, not a full WCAG pass — full reasoning per
+row is in UX_DECISIONS.md → Accessibility. **Known, scoped gap**: neither
+hand-rolled overlay (`ChangePasswordModal`, the user popover) uses a
+dedicated focus-trap library, so `Tab` can still cycle out to the page behind
+them.
 
-- **Generated `Button.vue`/`buttonVariants` dropped in favor of this app's own
-  button classes**: `AlertDialogAction`/`AlertDialogCancel` shipped wired to a
-  generic shadcn Button component with its own default radius/padding scale,
-  which would have visually diverged from every hand-built button already in the
-  app (`rounded-[10px]`/`rounded-[11px]`, `bg-accent`/`bg-destructive`). Deleted
-  the generated Button component and restyled Action/Cancel directly with the
-  app's existing button vocabulary instead.
+### Internationalization
 
-- **Added a `.npmrc` with `legacy-peer-deps=true`**: the project's pre-existing
-  `oxlint`/`eslint-plugin-oxlint` peer-dependency conflict made every
-  `shadcn-vue add` invocation fail outright, since the CLI shells out to a plain
-  `npm install` with no flag to pass `--legacy-peer-deps` through. This also
+| # | Problem | Solution |
+| --- | --- | --- |
+| 21 | All UI copy was hardcoded Turkish, with no path to a second language | `vue-i18n` (Composition API mode) with `tr`/`en` message catalogs, locale persisted to `localStorage` |
+
+URL-based locale prefixing (`/en`, `/tr`) was deliberately skipped — no
+SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
+`useTheme.ts`'s own pattern) is sufficient.
+
+### shadcn-vue migration
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 22 | The stated stack was never actually run through `shadcn-vue init` — hand-authored `src/components/ui/*.vue` diverged from the intended library | Installed `shadcn-vue`, scoped to the dropdown-menu/alert-dialog components the archived-documents menu needed |
+| 23 | shadcn-vue's CLI (2.8.x) generates Tailwind v4-only syntax, silently producing zero working CSS under this project's v3 | Every generated component hand-ported to v3 syntax; `tw-animate-css` swapped for the real v3 plugin `tailwindcss-animate` |
+| 24 | The CLI's icon-library flag installed a second, scoped `@lucide/vue` package alongside the existing `lucide-vue-next` | Deleted the two generated files that needed it, uninstalled `@lucide/vue` |
+| 25 | Generated `Button.vue`/`buttonVariants` had its own radius/padding scale, diverging from every hand-built button in the app | Deleted the generated Button; restyled `AlertDialogAction`/`AlertDialogCancel` with the app's own button vocabulary |
+| 26 | A pre-existing `oxlint`/`eslint-plugin-oxlint` peer-dependency conflict made every `shadcn-vue add` (and plain `npm install`) fail outright | Added `.npmrc` with `legacy-peer-deps=true` |
+
+- **Installed later, for the row-actions menu, not from day one**: the
+  design tokens were already authored in shadcn's own semantic naming
+  convention, but the original implementation plan never included a
+  `shadcn-vue init` step — a gap between the stated stack and what was
+  actually built, not a documented decision to avoid the library.
+
+- **CLI targets Tailwind v4; this project is pinned to v3**: the generated
+  components shipped v4-only class syntax (bare `data-open:` variants,
+  `w-(--css-var)` arbitrary values, `not-*`/`**:` combinators,
+  `outline-hidden`) that v3's compiler can't parse, and the CLI's own
+  `tw-animate-css` dependency uses v4-only `@theme`/`@utility` at-rules —
+  confirmed via a build where lightningcss logged "Unknown at rule:
+  @utility" and `animate-in`/`fade-in-0` never compiled. Fixed by
+  hand-porting every class and swapping in `tailwindcss-animate`, verified by
+  grepping the production build's CSS for a real `@keyframes enter` rule.
+
+- **`@lucide/vue` pulled in by the CLI, then removed**: kept
+  `lucide-vue-next` as the single icon source everywhere, including inside
+  the new menu, to avoid two parallel Lucide packages.
+
+- **`.npmrc` with `legacy-peer-deps=true`**: the CLI shells out to a plain
+  `npm install` with no flag to pass `--legacy-peer-deps` through; this also
   quietly fixes the same friction for any future plain `npm install` in this
-  project, not just shadcn-vue's.
+  project.
+
+### Feedback & loading
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 27 | Content pops in abruptly after loading, shifting the layout underneath it | `SkeletonBlock.vue` — a shimmer-animated placeholder sized to its eventual content |
+| 28 | `Skeleton.vue` violated the `vue/multi-word-component-names` lint rule | Renamed to `SkeletonBlock.vue` |
+
+### Housekeeping
+
+| # | Problem | Solution |
+| --- | --- | --- |
+| 29 | Console logging left in production | Stripped from the production build |
+| 30 | A debug "Hata simüle et" trigger could plausibly leak into a production build | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check |
+| 31 | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused | Deleted — confirmed zero imports anywhere |
+
+### Explicitly deferred / out of scope
+
+- Toast-stacking when several retries fail back-to-back (cosmetic noise,
+  flagged but not fixed).
+- The `Sign`/`Archive`/`Document Management` nav destinations and three
+  unimplemented Profile sub-tabs — visual stubs only, not covered by the
+  source design file.
+- The full Vitest suite — a deliberate scope call, not an oversight: the
+  case brief lists automated tests as optional, and the time budget instead
+  went to the mandatory requirements (Auth0, real HTTP, Zod-schema
+  validation) and to this project's own consistency audit.
+- Splitting `TimestampView.vue`'s 4-state flow into
+  `useDocumentQueue()`/`useOtpFlow()` composables — deliberately deferred to
+  avoid drawing the wrong abstraction boundaries before the flow's edge
+  cases have settled (see UX_DECISIONS.md → Architecture).
 
 ## Design notes
 
