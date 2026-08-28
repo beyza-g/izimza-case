@@ -11,3 +11,7 @@ export async function fetchSecurity(): Promise<SecurityInfo> {
 export async function updatePassword(newPassword: string): Promise<void> {
   await http.patch('/auth', { currentPassword: newPassword })
 }
+
+export async function closeAllSessions(): Promise<void> {
+  await http.patch('/auth', { activeSessionCount: 1 })
+}
