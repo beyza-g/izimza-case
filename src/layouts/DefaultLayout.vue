@@ -5,10 +5,8 @@ import AppSettingsNav from '@/components/layout/AppSettingsNav.vue'
 import AppTopbar from '@/components/layout/AppTopbar.vue'
 import AppBottomNav from '@/components/layout/AppBottomNav.vue'
 import ToastHost from '@/components/ui/ToastHost.vue'
-import DebugErrorTrigger from '@/components/ui/DebugErrorTrigger.vue'
 
 const route = useRoute()
-const isDev = import.meta.env.DEV
 </script>
 
 <template>
@@ -25,6 +23,5 @@ const isDev = import.meta.env.DEV
 
     <AppBottomNav />
     <ToastHost />
-    <DebugErrorTrigger v-if="isDev" />
   </div>
 </template>

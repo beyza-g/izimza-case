@@ -278,7 +278,7 @@ SSR/SEO surface exists behind auth, so localStorage persistence (mirroring
 | #   | Problem                                                                       | Solution                                                                                                    |
 | --- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
 | 29  | Console logging left in production                                            | Stripped from the production build                                                                          |
-| 30  | A debug "Hata simüle et" trigger could plausibly leak into a production build | Gated by `import.meta.env.DEV`; verified absent via an actual `npm run build` + `npm run preview` DOM check |
+| 30  | A dev-only "Hata simüle et" debug trigger would be visible to anyone reviewing the app via `npm run dev` | Removed entirely (`DebugErrorTrigger.vue`, its `mockApi.ts` backing, and the `/__mock/validation-error`/`/__mock/server-error` routes it alone used) |
 | 31  | A leftover create-vue scaffold Pinia store (`stores/counter.ts`) sat unused   | Deleted — confirmed zero imports anywhere                                                                   |
 
 ### Code quality & duplication cleanup
